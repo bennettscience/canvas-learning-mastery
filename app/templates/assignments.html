@@ -1,0 +1,12 @@
+{% extends 'base.html' %} {% block content %}
+<table id="alignment-table"></table>
+<table id="student-table"></table>
+<div class="">
+  {% for item in items %}
+  <p>{{item.assignment_id}}</p>
+  <p>{{item.student_id}}</p>
+  <p>{{item.score}}</p>
+  {% endfor %}
+</div>
+
+{% endblock %}
