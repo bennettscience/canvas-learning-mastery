@@ -1,0 +1,16 @@
+{% extends 'base.html' %} {% block content %}
+<h1></h1>
+<div class="user">
+  {{ user.name }}
+  <a href="/logout">Logout</a>
+</div>
+<div class="courses">
+  <ul>
+    {% for course in courses %}
+    <!-- <li>{{ course }}</li> -->
+    <li><a href="{{ url_for('course', course_id=course.id) }}">{{course.name}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}

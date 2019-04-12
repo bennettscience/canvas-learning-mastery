@@ -1,0 +1,8 @@
+{% extends 'base.html' %} {% block content %}
+<h1>Canvas Mastery Grades Doctor</h1>
+{% for message in get_flashed_messages() %}
+<p>{{ message }}</p>
+{% endfor %}
+<h2>I don't know you!</h2>
+<p><a href="{{ url_for('login') }}">Login with Canvas</a></p>
+{%endblock%}

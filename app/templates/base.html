@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/main.css')
+    }}"
+    />
+    {% if title %}
+    <title>{{ title }}</title>
+    {% else %}
+    <title>Canvas LMG Doctor</title>
+    {% endif %}
+  </head>
+  <body>
+    {% block content %} {% endblock %} {% block scripts %}
+    <script type="text/javascript">
+      var changeHandler = function(e) {
+        var elem = e;
+        var assignmentId = e.target.value;
+        var outcomeId = $(e.target)
+          .closest("tr")
+          .attr("id");
+        $.ajax({
+          type: "POST",
+          url: "/align",
+          data: JSON.stringify({
+            assignment_id: assignmentId,
+            outcome_id: outcomeId
+          }),
+          contentType: "application/json;charset=UTF-8",
+          success: function(resp) {
+            console.log(resp.success)
+            var id = resp.success[0];
+            $(`#${id} td:last`)
+              .animate(
+                {
+                  opacity: 1
+                },
+                100
+              )
+              .animate(
+                {
+                  opacity: 0
+                },
+                2000
+              );
+            setTimeout(location.reload(true), 2200);
+          },
+          failure: function(resp) {
+            console.error(resp);
+          }
+        });
+      };
+
+      clickHandler = function(e) {
+        console.log(e.target);
+        var studentId = $(e.target)
+          .closest("tr")
+          .attr("id");
+        var re = /(course)\/(\d+)/gi;
+        var url = window.location.href;
+        courseId = re.exec(url);
+        console.log(courseId[2]);
+        $.ajax({
+          type: "POST",
+          url: "/outcomes",
+          data: JSON.stringify({
+            student_id: studentId,
+            course_id: courseId[2]
+          }),
+          contentType: "application/json;charset=UTF-8",
+          success: function(resp) {
+            var studentId = resp.success.student_id;
+            var array = resp.success.data;
+            console.log(array);
+            $(`#${studentId}`)
+              .children("td")
+              .each(function(i, el) {
+                array.filter(function(item) {
+                  if ($(el).attr("data-outcome") == item.outcome_id) {
+                    console.log("matched outcome");
+                    if ($(el).text() == 1 && item.outcome_score < 3) {
+                      $(el).addClass("lower");
+                    } else if ($(el).text() == 0 && item.outcome_score > 3) {
+                      $(el).addClass("higher");
+                    }
+                  }
+                });
+              });
+          },
+          failure: function(resp) {
+            console.error(resp);
+          }
+        });
+      };
+
+      processTable = function() {
+        var arr = new Array();
+        var re = /(course)\/(\d+)/gi;
+        var courseId = re.exec(window.location.href)[2];
+        console.log("Course ID: ", courseId);
+
+        $("tr.row").each(function(i, el) {
+          var row = $(el);
+          var studentId = row.attr("id");
+          arr.push(studentId);
+        });
+
+        console.log(arr)
+
+        $.ajax({
+          type: "POST",
+          url: "/outcomes",
+          data: JSON.stringify({
+            student_id_list: arr,
+            course_id: courseId
+          }),
+          contentType: "application/json",
+          success: function(resp) {
+            console.log(resp);
+            for (var i = 0; i < resp.success.length; i++) {
+              var student = resp.success[i];
+
+              var studentId = student.student_id;
+              var array = student.outcomes;
+
+              $(`#${studentId}`)
+                .children("td")
+                .each(function(i, el) {
+                  array.filter(function(item) {
+                    if ($(el).attr("data-outcome") == item.outcome_id) {
+                      console.log("matched outcome");
+                      if ($(el).text() == 1 && item.outcome_score < 3) {
+                        $(el).addClass("lower");
+                      } else if ($(el).text() == 0 && item.outcome_score > 3) {
+                        $(el).addClass("higher");
+                      }
+                    }
+                  });
+                });
+            }
+          },
+          failure: function(resp) {
+            console.log(resp);
+          }
+        });
+      };
+
+      document
+        .getElementById("alignment-table")
+        .addEventListener("change", changeHandler, false);
+
+      document
+        .getElementById("student-table")
+        .addEventListener("click", clickHandler, false);
+
+      $(document).ajaxStart(function() {
+        console.log("started ajax");
+        $("#loader").show();
+      });
+
+      $(document).ajaxStop(function() {
+        console.log("stopped ajax");
+        $("#loader").hide();
+      });
+    </script>
+    {% endblock %}
+  </body>
+</html>
