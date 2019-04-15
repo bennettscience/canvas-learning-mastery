@@ -6,26 +6,27 @@ from flask_login import current_user
 class Outcomes:
 
     @staticmethod
-    def save_course_data(canvas, course_id):
+    def save_course_data(canvas, course_id, assignment_group_id):
 
         data = []
         course = canvas.get_course(course_id)
         outcome_groups = course.get_outcome_groups_in_context()
 
         # All Outcome linked assignments should be in one group
-        assignment_group = course.get_assignment_group(app.config['OUTCOME_ASSIGNMENTS'], include=['assignments'])
+        assignment_group = course.get_assignment_group(assignment_group_id, include=['assignments'])
 
         for g in outcome_groups:
             outcomes = g.get_linked_outcomes()
             for o in outcomes:
                 outcome_data = o.outcome
                 outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'])
-                print("New Outcome {}".format(outcome))
+                app.logger.debug('New Outcome: %s', outcome)
                 db.session.add(outcome)
 
         for a in assignment_group.assignments:
-            assignment = Assignment(id=a['id'], title=a['name'])
+            assignment = Assignment(id=a['id'], title=a['name'], course_id=course_id)
             data.append({'assignment_id':a['id'], 'assignment_name':a['name']})
+            app.logger.debug('New Assignment: %s', assignment)
             db.session.add(assignment)
 
         db.session.commit()
@@ -91,7 +92,7 @@ class Assignments:
         json_data = []
 
         course = canvas.get_course(course_id)
-        app.logger.info('Requested course: %s', course)
+        app.logger.debug('Requested course: %s', course)
 
         # Find assignments which are aligned to Outcomes
         query = Assignment.query.filter(Assignment.outcome_id != None)
@@ -111,7 +112,7 @@ class Assignments:
                 item = json.loads(e.to_json())
                 student_list.append(item['user']['id'])
 
-            app.logger.info('Requested list: %s', student_list)
+            app.logger.debug('Requested list: %s', student_list)
 
             # Request the submissions from Canvas sorted by user
             submissions = course.get_multiple_submissions( \
@@ -148,7 +149,7 @@ class Assignments:
                             'user_name': user_name,
                             'submissions': submissions,
                         })
-            else:
-                return None
+        else:
+            return None
 
         return json_data
