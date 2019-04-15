@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, HiddenField
+from wtforms import StringField, PasswordField, SelectField, BooleanField, SubmitField, HiddenField
 from wtforms.validators import DataRequired
 from app.models import Outcome
 
@@ -11,4 +11,5 @@ class LoginForm(FlaskForm):
 
 class StoreOutcomesForm(FlaskForm):
     id = HiddenField('course_id')
+    assignment_groups = SelectField('Assignment Group', coerce=int, choices=[])
     submit = SubmitField('Get Outcomes')
