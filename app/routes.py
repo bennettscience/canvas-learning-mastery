@@ -99,43 +99,60 @@ def callback():
         db.session.commit()
     login_user(user, True)
 
-    return redirect(url_for('user', user_id=user_id))
+    return redirect(url_for('dashboard'))
 
-@app.route('/user/<user_id>')
-def user(user_id):
+@app.route('/dashboard')
+def dashboard():
     app.logger.info('Access token: %s', session['oauth_token'])
     canvas = init_canvas(session['oauth_token']['access_token'])
 
-    app.logger.info('Requesting the user id from acanvas')
+    app.logger.info('Requesting the user id from canvas')
     app.logger.info('The current user is %s', current_user)
     user = current_user
     app.logger.info('The Canvas user is %s', user.canvas_id)
 
     courses = canvas.get_courses(state=['available'])
 
-    return render_template('user.html', title='User', user=user, courses=courses)
+    return render_template('dashboard.html', title='Courses', courses=courses)
 
 @app.route('/course/<course_id>', methods=['GET', 'POST'])
 def course(course_id):
     canvas = init_canvas(session['oauth_token']['access_token'])
+    query = canvas.get_course(course_id).get_assignment_groups()
+
+    assignment_groups = [(str(a.id), a.name) for a in query]
+    app.logger.debug('Assignment groups: %s', assignment_groups)
     form = StoreOutcomesForm(request.values, id=course_id)
+
+    app.logger.debug('Setting assignment groups to: %s', assignment_groups)
+    form.assignment_groups.choices = assignment_groups
+
     if request.method == 'POST':
-        print(form.id.data)
-        outcomes = Outcomes.save_course_data(canvas, form.id.data)
+        app.logger.debug('Form submission')
+        app.logger.debug('Course ID: %s, Assignment group ID: %s', form.id.data, form.assignment_groups.data)
+        outcomes = Outcomes.save_course_data(canvas, form.id.data, form.assignment_groups.data)
         # return redirect(url_for('course/<id>', id))
 
+    app.logger.info('Checking for outcomes')
     outcomes = Outcome.query.all()
+    app.logger.info('Outcomes: %s', outcomes)
 
     if not outcomes:
+        app.logger.debug('No outcomes, returning None')
         outcomes = None
 
+    app.logger.info('Checking for assignments...')
     assignments = Assignment.query.all()
+    app.logger.info('Assignments: %s', assignments)
 
     if not assignments:
+        app.logger.info('No assingments, setting to None, scores = None')
         assignments = None
         scores = None
     else:
+        app.logger.info('Found assignments, getting scores')
         scores = Assignments.get_all_assignment_scores(canvas, course_id)
+        app.logger.debug(scores)
 
     return render_template('course.html',
         title='Canvas course',
