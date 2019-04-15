@@ -66,7 +66,7 @@ class Outcome(db.Model):
         :raises:
     
         :rtype:
-        """    
+        """   
         return assignment.outcome_id == self.id
 
     def __repr__(self):
@@ -76,6 +76,7 @@ class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128))
     score = db.Column(db.Integer)
+    course_id = db.Column(db.Integer)
     # Link to the outcome ID
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcome.id'))
 
