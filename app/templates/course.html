@@ -67,9 +67,9 @@
   <table id="student-table">
     <tr>
       <th>Student</th>
-      {% if scores|length > 0 %} {% for item in scores[0]['submissions'] %}
+      {% if scores is not none %} {% for item in scores[0]['submissions'] %}
       <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
-      {% endfor %}{% endif %}
+      {% endfor %}
     </tr>
     {% for item in scores %}
     <tr id="{{item['canvas_id']}}" class="row">
@@ -81,6 +81,7 @@
       {% endfor %}
     </tr>
     {% endfor %}
+    {% endif %}
   </table>
 </div>
 
@@ -89,6 +90,7 @@
   <p>Align each outcome with an assignment to update on Canvas</p>
   <form class="" action="" method="post">
     <p>{{ form.id }}</p>
+    <p>{{ form.assignment_groups }}</p>
     <p>{{ form.submit() }}</p>
   </form>
   <table id="alignment-table">
@@ -97,6 +99,7 @@
       <th>title</th>
       <th>aligned to</th>
     </tr>
+    {% if outcomes is not none %}
     {% for outcome in outcomes %}
     <tr id="{{outcome.id}}">
       <td>{{outcome.id}}</td>
@@ -114,6 +117,7 @@
       </td>
       <td class="confirm">&#10003; - refreshing page...</td>
       {% endfor %}
+      {% endif %}
     </tr>
   </table>
 </div>
