@@ -31,46 +31,26 @@ class Outcome(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(64))
     score = db.Column(db.Integer)
+    
+    assignment_id = db.relationship('Assignment', uselist=False, back_populates='outcome')
 
     def align(self, assignment):
-    
-        """ Description
-        :type self:
-        :param self:
-    
-        :type assignment:
-        :param assignment:
-    
-        :raises:
-    
-        :rtype:
-        """    
-        if not self.is_aligned(assignment):
+        if self.is_aligned():
             self.assignment.remove(self.assignment[0])
             self.assignment.append(assignment)
             db.session.commit()
             return 'Updated alignment to {}'.format(assignment.title)
         else:
-            return '{} is already aligned!'.format(assignment.title)
+            self.assignment.append(assignment)
+            db.session.commit()
+            return 'Aligned {}'.format(assignment.title)
 
     # Check that it isn't aleady aligned to the Assignment
-    def is_aligned(self, assignment):
-    
-        """ Description
-        :type self:
-        :param self:
-    
-        :type assignment:
-        :param assignment:
-    
-        :raises:
-    
-        :rtype:
-        """   
-        return assignment.outcome_id == self.id
+    def is_aligned(self): 
+        return self.assignment_id is not None
 
     def __repr__(self):
-        return '< {} || {} >'.format(self.title, self.id)
+        return '< {} || {} || {}>'.format(self.title, self.id, self.assignment_id)
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -83,4 +63,4 @@ class Assignment(db.Model):
     outcome = db.relationship('Outcome', backref='assignment', passive_updates=False, uselist=False)
 
     def __repr__(self):
-        return '< {} || {} || {}>'.format(self.id, self.title, self.outcome_id)
+        return '< {} || {} || {} || {}>'.format(self.id, self.title, self.course_id, self.outcome_id)
