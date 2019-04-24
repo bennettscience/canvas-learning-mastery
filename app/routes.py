@@ -12,7 +12,7 @@ oauth = OAuth2Session(app.config['OAUTH_CREDENTIALS']['canvas']['id'],
                       redirect_uri=app.config['OAUTH_CREDENTIALS']['canvas']['redirect_url'])
 
 def init_canvas(token):
-    canvas = Canvas('https://elkhart.beta.instructure.com', token)
+    canvas = Canvas('https://elkhart.test.instructure.com', token)
     return canvas
 
 def refresh_oauth_token(user):
@@ -30,7 +30,7 @@ def index():
     app.logger.info('Index loaded')
     if not current_user.is_anonymous:
         app.logger.info('Current user: %s', current_user.canvas_id)
-        return redirect(url_for('user', user_id=current_user.canvas_id))
+        return redirect(url_for('dashboard'))
     # if current_user:
     #     if current_user.expiration < 
     #     return redirect(url_for('user', user_id=current_user.canvas_id))
@@ -43,12 +43,12 @@ def logout():
     # to build one with requests
     # DELETE /login/oauth2/token
     # https://canvas.instructure.com/doc/api/file.oauth_endpoints.html#post-login-oauth2-token
-    headers = {
-        'Authorization': 'access_token ' + session['oauth_token']['access_token']
-    }
+    # headers = {
+    #     'Authorization': 'access_token ' + session['oauth_token']['access_token']
+    # }
 
-    r = requests.delete(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], headers=headers)
-    app.logger.info(r.json())
+    # r = requests.delete(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], headers=headers)
+    # app.logger.info(r.json())
 
     app.logger.info('Clearing session')
     session.clear()
@@ -117,14 +117,15 @@ def dashboard():
 
 @app.route('/course/<course_id>', methods=['GET', 'POST'])
 def course(course_id):
+    app.logger.info('Course requested: %s', course_id)
     canvas = init_canvas(session['oauth_token']['access_token'])
     query = canvas.get_course(course_id).get_assignment_groups()
 
     assignment_groups = [(str(a.id), a.name) for a in query]
-    app.logger.debug('Assignment groups: %s', assignment_groups)
+
     form = StoreOutcomesForm(request.values, id=course_id)
 
-    app.logger.debug('Setting assignment groups to: %s', assignment_groups)
+    app.logger.debug('Setting form assignment groups to: %s', assignment_groups)
     form.assignment_groups.choices = assignment_groups
 
     if request.method == 'POST':
@@ -142,13 +143,15 @@ def course(course_id):
         outcomes = None
 
     app.logger.info('Checking for assignments...')
-    assignments = Assignment.query.all()
+
+    # Look only in the current course
+    assignments = Assignment.query.filter_by(course_id=course_id)
     app.logger.info('Assignments: %s', assignments)
 
     if not assignments:
-        app.logger.info('No assingments, setting to None, scores = None')
-        assignments = None
-        scores = None
+        app.logger.info('No assingments found for this course')
+        assignments = []
+        scores = []
     else:
         app.logger.info('Found assignments, getting scores')
         scores = Assignments.get_all_assignment_scores(canvas, course_id)
@@ -165,12 +168,13 @@ def course(course_id):
 @app.route('/align', methods=['POST'])
 def align_items():
     data = request.json
-    # print(data)
+    app.logger.debug('Alignment posted: %s', data)
+    # assignment = Assignment.query.get(data['assignment_id'])
+    # assignment.outcome_id = data['outcome_id']
+    outcome = Outcome.query.get(data['outcome_id'])
     assignment = Assignment.query.get(data['assignment_id'])
-    assignment.outcome_id = data['outcome_id']
+    outcome.align(assignment)
     db.session.commit()
-    
-    # outcome = Outcome.align(assignment)
     # print('Line 51', post['outcome_id'], post['assignment_id'])
     return jsonify({'success': [data['outcome_id'], data['assignment_id']]})
 
