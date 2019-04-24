@@ -7,6 +7,16 @@ class Outcomes:
 
     @staticmethod
     def save_course_data(canvas, course_id, assignment_group_id):
+        """
+        Get Outcomes from Canvas for the course and store them in the database
+
+        args:
+            :canvas:               Canvas object for API methods
+            :course_id:            Unique int for the Canvas course to interact with
+            :assignment_group_id:  Get assignments that will update as outcomes are updated
+
+        All outcome IDs are collected from Canvas and written to the database.
+        """
 
         data = []
         course = canvas.get_course(course_id)
@@ -15,21 +25,27 @@ class Outcomes:
         # All Outcome linked assignments should be in one group
         assignment_group = course.get_assignment_group(assignment_group_id, include=['assignments'])
 
-        for g in outcome_groups:
-            outcomes = g.get_linked_outcomes()
+        # Loop through each outcome group individually
+        for group in outcome_groups:
+
+            # Get the individual outcomes within each group
+            outcomes = group.get_linked_outcomes()
+
+            # Store each outcome in the database
             for o in outcomes:
                 outcome_data = o.outcome
-                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'])
+                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], score=None)
                 app.logger.debug('New Outcome: %s', outcome)
                 db.session.add(outcome)
+                db.session.commit()
 
         for a in assignment_group.assignments:
             assignment = Assignment(id=a['id'], title=a['name'], course_id=course_id)
             data.append({'assignment_id':a['id'], 'assignment_name':a['name']})
             app.logger.debug('New Assignment: %s', assignment)
             db.session.add(assignment)
+            db.session.commit()
 
-        db.session.commit()
         return data
     
     @staticmethod
@@ -92,10 +108,10 @@ class Assignments:
         json_data = []
 
         course = canvas.get_course(course_id)
-        app.logger.debug('Requested course: %s', course)
+        app.logger.debug('Requested course: %s', course_id)
 
         # Find assignments which are aligned to Outcomes
-        query = Assignment.query.filter(Assignment.outcome_id != None)
+        query = Assignment.query.filter(Assignment.course_id == course_id, Assignment.outcome_id != None)
 
         if query.all():
 
@@ -105,6 +121,8 @@ class Assignments:
                 outcome_list.append(item.__dict__)
                 # Store assignment IDs to pass to Canvas
                 assignment_list.append(item.id)
+
+            app.logger.debug('Assignments: %s', assignment_list)
 
             # get active students to request submissions for
             enrollments = course.get_enrollments(role='StudentEnrollment')
@@ -121,6 +139,7 @@ class Assignments:
             # Process the Submissions into usable JSON objects
             for sub in submissions:
                 item = json.loads(sub.to_json())
+                app.logger.debug('Item JSON: %s', item)
 
                 if item['submissions']:
                     if item['user_id'] in student_list:
