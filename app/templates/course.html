@@ -1,6 +1,7 @@
 {% extends 'base.html' %} {% block content %}
 <div class="">
   <h1>Hey there</h1>
+  <div><a href="{{url_for('dashboard')}}"><< Dashboard</a></div>
   <button id="check-scores" onclick="processTable()">Check Scores</button>
   <svg
     id="loader"
