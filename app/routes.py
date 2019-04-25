@@ -135,7 +135,8 @@ def course(course_id):
         # return redirect(url_for('course/<id>', id))
 
     app.logger.info('Checking for outcomes')
-    outcomes = Outcome.query.all()
+    outcomes = Outcome.query.filter(Outcome.course_id == course_id)
+
     app.logger.info('Outcomes: %s', outcomes)
 
     if not outcomes:
@@ -168,14 +169,10 @@ def course(course_id):
 @app.route('/align', methods=['POST'])
 def align_items():
     data = request.json
-    app.logger.debug('Alignment posted: %s', data)
-    # assignment = Assignment.query.get(data['assignment_id'])
-    # assignment.outcome_id = data['outcome_id']
     outcome = Outcome.query.get(data['outcome_id'])
     assignment = Assignment.query.get(data['assignment_id'])
     outcome.align(assignment)
     db.session.commit()
-    # print('Line 51', post['outcome_id'], post['assignment_id'])
     return jsonify({'success': [data['outcome_id'], data['assignment_id']]})
 
 @app.route('/outcomes', methods=['POST'])
