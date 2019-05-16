@@ -9,18 +9,26 @@ class Outcomes:
 
     @staticmethod
     def save_course_data(canvas, course_id, assignment_group_id):
-        """
-        Get Outcomes from Canvas for the course and store them in the database
+        
+        """ Get Outcomes from Canvas for the course and store them in the database
 
-        args:
-            :canvas:               Canvas object for API methods
-            :course_id:            Unique int for the Canvas course to interact with
-            :assignment_group_id:  Get assignments that will update as outcomes are updated
+        :type canvas: Object
+        :param canvas: Canvas object
+    
+        :type course_id: Int
+        :param course_id: Canvas course ID
+    
+        :type assignment_group_id: Int
+        :param assignment_group_id: Assignment group to update
+    
+        :raises:
+    
+        :rtype: List data
+        """   
 
-        All outcome IDs are collected from Canvas and written to the database.
-        """
-
+        # Instantiate a list to hold return data
         data = []
+
         course = canvas.get_course(course_id)
         outcome_groups = course.get_outcome_groups_in_context()
 
@@ -49,101 +57,127 @@ class Outcomes:
             db.session.commit()
 
         return data
+
+    # @staticmethod
+    # def get_user_outcomes(canvas, course_id, student_id_list):
+    #     """ Get outcomes for all students in a given course 
+
+    #     """
+    #     data = []
+    #     course = canvas.get_course(course_id)
+
+    #     print(student_id_list)
+
+    #     for student in student_id_list:
+    #         print(student)
+    #         outcomes = []
+    #         rollups = course.get_outcome_result_rollups(user_ids=student, aggregate="course", aggregate_stat="mean")
+
+    #         raw_data = rollups['rollups'][0]['scores']
+
+    #         for outcome in raw_data:
+    #             outcome_id = int(outcome['links']['outcome'])
+    #             outcome_score = outcome['score']
+
+    #             query = Assignment.query.filter_by(outcome_id=outcome_id).first()
+    #             if query is not None:
+    #                 assignment_id = query.id
+
+    #             outcome = {'outcome_id': outcome_id, 'outcome_score': outcome_score, 'assignment_id': assignment_id}
+    #             outcomes.append(outcome)
+
+    #         data.append({
+    #             'student_id': student,
+    #             'outcomes': outcomes,
+    #         })
+
+    #     return data
     
     @staticmethod
-    def make_outcome_dict(canvas, course_id):
-        """ Create a dictionary of Outcomes from the course ID """
-        data = []
-        course = canvas.get_course(course_id)
-        groups = course.get_outcome_groups_in_context()
-
-        for g in groups:
-            outcomes = g.get_linked_outcomes()
-            for o in outcomes:
-                outcome = o.outcome
-                data.append({'outcome_id': outcome['id'], 'outcome_title':outcome['title']})
-
-        return data
-
-    @staticmethod
-    def get_user_outcomes(canvas, course_id, student_id_list):
-        """ Get outcomes for all students in a given course """
-        data = []
-        course = canvas.get_course(course_id)
-
-        print(student_id_list)
-
-        for student in student_id_list:
-            print(student)
-            outcomes = []
-            rollups = course.get_outcome_result_rollups(user_ids=student, aggregate="course", aggregate_stat="mean")
-
-            raw_data = rollups['rollups'][0]['scores']
-
-            for outcome in raw_data:
-                outcome_id = int(outcome['links']['outcome'])
-                outcome_score = outcome['score']
-
-                query = Assignment.query.filter_by(outcome_id=outcome_id).first()
-                if query is not None:
-                    assignment_id = query.id
-
-                outcome = {'outcome_id': outcome_id, 'outcome_score': outcome_score, 'assignment_id': assignment_id}
-                outcomes.append(outcome)
-
-            data.append({
-                'student_id': student,
-                'outcomes': outcomes,
-            })
-
-        return data
-    
     def process_submissions(student_id, course):
+
+        """ Process student Outcome and Assignment scores
+        :type student_id: Int
+        :param student_id: Canvas ID of current student
+
+        :type course: {Object}
+        :param course: Instantiated Canvas Course object
+
+        :raises:
+
+        :rtype: {Object} obj
+        """    
         app.logger.debug("Processing %s", student_id)
-        # Instantiate a list to hold outcomes for the student
+
+        # Instantiate a dictionary
         obj = {}
         obj['outcomes'] = []
         obj['student_id'] = student_id
 
+        # Request all outcome rollups from Canvas
         rollups = course.get_outcome_result_rollups(
             user_ids=student_id, aggregate="course", aggregate_stat="mean")
 
+        # Limit to scores only
         raw_data = rollups['rollups'][0]['scores']
 
+        # Run through each Outcome
         for outcome in raw_data:
             outcome_id = int(outcome['links']['outcome'])
             outcome_score = outcome['score']
 
-            query = Assignment.query.filter_by(
-                outcome_id=outcome_id).first()
+            # Find the matched assignment in the database
+            query = Assignment.query.filter_by(outcome_id=outcome_id).first()
+
             if query is not None:
                 assignment_id = query.id
 
+                # Get the assignment and submissions for the student
                 assignment = course.get_assignment(assignment_id)
                 submission = assignment.get_submission(student_id)
+
                 app.logger.info('Submission for %s: %s', assignment_id, submission.score)
 
+                # Instantiate an object for the current Outcome/Assignment pair
                 item = {'outcome_id': outcome_id,
                         'outcome_score': outcome_score, 'assignment_id': assignment_id}
 
+                # Check the conditions and update the Canvas gradebook
                 if outcome['score'] >= 3 and submission.score == 0.0:
-                    app.logger.debug('Passing outcome, setting submission to 1.')
                     item['assignment_score'] = 1
                     submission.edit(submission={'posted_grade':1.0})
                 elif outcome['score'] < 3 and submission.score > 1.0:
-                    app.logger.debug('Failing outcome, setting submission to 0.')
                     item['assignment_score'] = 0
                     submission.edit(submission={'posted_grade':0.0})
                 else:
                     item['assignment_score'] = submission.score
 
+                # Store the item in the return object array
                 obj['outcomes'].append(item)
 
         return obj
-    
+
     @classmethod
     def update_student_scores(cls, canvas, course_id, student_ids):
-        app.logger.debug("starting pool for processing")
+
+        """ Description
+        :type cls: Object
+        :param cls: Outcomes class
+
+        :type canvas: Object
+        :param canvas: Canvas object
+
+        :type course_id: Int
+        :param course_id: Current course ID
+
+        :type student_ids: List
+        :param student_ids: Student IDs to iterate
+
+        :raises:
+
+        :rtype: List result
+        """    
+        # Start a pool to speed up the requests
         pool = mp.Pool(mp.cpu_count())
 
         course = canvas.get_course(course_id)
@@ -153,7 +187,6 @@ class Outcomes:
 
         # Post the list to the process function, wait for the results
         result = pool.map(items, student_ids)
-        # app.logger.debug("Result array: %s", result)
 
         return result
 
@@ -162,12 +195,24 @@ class Assignments:
     @staticmethod
     def get_all_assignment_scores(canvas, course_id):
 
+        """ Request current scores for students in the course
+        :type canvas: Object
+        :param canvas: Canvas object
+    
+        :type course_id: Int
+        :param course_id: Canvas course ID
+    
+        :raises:
+    
+        :rtype: Object json_data
+        """    
         # make a couple lists to hold processed data
         assignment_list = []
         student_list = []
         outcome_list = []
         json_data = []
 
+        # Get the Course object
         course = canvas.get_course(course_id)
         app.logger.debug('Requested course: %s', course_id)
 
@@ -233,7 +278,3 @@ class Assignments:
             return None
 
         return json_data
-
-    @staticmethod
-    def update_assignment_scores(canvas, course_id, assignments_list):
-        pass

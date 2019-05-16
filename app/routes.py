@@ -12,21 +12,36 @@ oauth = OAuth2Session(app.config['OAUTH_CREDENTIALS']['canvas']['id'],
                       redirect_uri=app.config['OAUTH_CREDENTIALS']['canvas']['redirect_url'])
 
 def init_canvas(token):
+    
+    """ Launch a new Canvas object
+    :type token: Str
+    :param token: OAuth token
+
+    :rtype:
+    """
     canvas = Canvas('https://elkhart.test.instructure.com', token)
     return canvas
 
 def refresh_oauth_token(user):
+    
+    """ Get the user refresh token for API calls
+    :type user: Int
+    :param user: Canvas user ID
+
+    :rtype: Str token
+    """
     token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], \
-        grant_type='refresh_token',
-        client_id=app.config['OAUTH_CREDENTIALS']['canvas']['id'],
-        client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
-        refresh_token=user.refresh_token)
+    grant_type='refresh_token',
+    client_id=app.config['OAUTH_CREDENTIALS']['canvas']['id'],
+    client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
+    refresh_token=user.refresh_token)
 
     return token
 
 @app.route('/')
 @app.route('/index')
 def index():
+
     app.logger.info('Index loaded')
     if not current_user.is_anonymous:
         app.logger.info('Current user: %s', current_user.canvas_id)
@@ -59,6 +74,15 @@ def logout():
 
 @app.route('/login')
 def login():
+    
+    """ Log in to the app via OAuth through Canvas
+    :methods: GET
+    :responses:
+        200: 
+            description: Route to callback for final authentication
+        400:
+            description: Bad request.
+    """
     app.logger.info('Launching oauth flow')
     authorization_url, state = oauth.authorization_url(app.config['OAUTH_CREDENTIALS']['canvas']['authorization_url'])
 
@@ -67,6 +91,15 @@ def login():
 
 @app.route('/callback')
 def callback():
+    
+    """ Perform final authorization of the user
+    :methods: GET
+    :responses:
+        200:
+            description: Successful authentication
+        400:
+            description: Bad request
+    """
     app.logger.info('Received token, validating with Canvas')
     token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], 
                                     client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
@@ -79,19 +112,26 @@ def callback():
 
     user_id = str(session['oauth_token']['user']['id'])
     user_name = session['oauth_token']['user']['name']
+
     app.logger.info('The user is %s with ID %s', user_name, user_id)
     app.logger.info('Querying database for user')
+
+    # Query the DB for an existing user
     user = User.query.filter_by(canvas_id=user_id).first()
 
     if user:
         app.logger.info('User: %s', user)
+
+        # Update the user token
         if user.token != session['oauth_token']['access_token']:
             user.token = session['oauth_token']['access_token']
             db.session.commit()
     else:
         app.logger.info('Creating new user in db')
-        user = User(canvas_id=user_id, 
-                    name=user_name, 
+        
+        # User doesn't exist, create a new one
+        user = User(canvas_id=user_id,
+                    name=user_name,
                     token=session['oauth_token']['access_token'],
                     expiration=session['oauth_token']['expires_at'],
                     refresh_token=session['oauth_token']['refresh_token'])
@@ -103,11 +143,15 @@ def callback():
 
 @app.route('/dashboard')
 def dashboard():
-    app.logger.info('Access token: %s', session['oauth_token'])
+    
+    """ List the logged-in user's courses
+    :methods: GET
+
+    :rtype: List courses
+    """
+    # Instantiate a new Canvas object
     canvas = init_canvas(session['oauth_token']['access_token'])
 
-    app.logger.info('Requesting the user id from canvas')
-    app.logger.info('The current user is %s', current_user)
     user = current_user
     app.logger.info('The Canvas user is %s', user.canvas_id)
 
@@ -117,21 +161,32 @@ def dashboard():
 
 @app.route('/course/<course_id>', methods=['GET'])
 def course(course_id):
+    
+    """ Single course view
+    :type course_id: Int
+    :param course_id: Canvas course ID
+
+    :methods: POST
+
+    :rtype:
+    """
     app.logger.info('Course requested: %s', course_id)
+
+    # Instantiate a new Canvas object
     canvas = init_canvas(session['oauth_token']['access_token'])
+
+    # Get the assignment groups from Canvas
     query = canvas.get_course(course_id).get_assignment_groups()
 
+    # Populate assignment_group_ids into the Outcomes fetch form dynamically
     form = StoreOutcomesForm(request.values, id=course_id)
-
     assignment_groups = [(str(a.id), a.name) for a in query]
 
     app.logger.debug('Setting form assignment groups to: %s', assignment_groups)
     form.assignment_groups.choices = assignment_groups
 
-    app.logger.info('Checking for outcomes')
+    # Look up any existing Outcomes by course ID
     outcomes = Outcome.query.filter(Outcome.course_id == course_id)
-
-    app.logger.info('Outcomes: %s', outcomes)
 
     if not outcomes:
         app.logger.debug('No outcomes, returning None')
@@ -161,30 +216,59 @@ def course(course_id):
 
 @app.route('/save', methods=['POST'])
 def save_outcomes():
+    
+    """ Save Outcomes from the course into the database
+    :methods: POST
+
+    :rtype:
+    """
+    # Get the data from the form submission
     data = request.values
+
+    # Instantiate a new Canvas object
     canvas = init_canvas(session['oauth_token']['access_token'])
-    app.logger.debug('Form submission')
-    app.logger.debug(data)
+
     app.logger.debug('Course ID: %s, Assignment group ID: %s', data['id'], data['assignment_groups'])
+
+    # Store the course Outcomes
     outcomes = Outcomes.save_course_data(canvas, data['id'], data['assignment_groups'])
-    # return jsonify({'success': outcomes})
+
+    # Reload the page
     return redirect(url_for('course', course_id=data['id']))
 
 @app.route('/align', methods=['POST'])
 def align_items():
+    
+    """ Align an Assignment to an Outcome
+    :methods: POST
+    """
     data = request.json
+
+    # Get the Outcome and Assignment specified
     outcome = Outcome.query.get(data['outcome_id'])
     assignment = Assignment.query.get(data['assignment_id'])
+
+    # Run the alignment and save
     outcome.align(assignment)
     db.session.commit()
     return jsonify({'success': [data['outcome_id'], data['assignment_id']]})
 
 @app.route('/outcomes', methods=['POST'])
 def get_user_outcomes():
+
+    """ Get the Outcomes for the students
+    :raises:
+
+    :rtype:
+    """
     app.logger.debug('Requested score update.')
+
+    # Instantiate a Canvas object
     canvas = init_canvas(session['oauth_token']['access_token'])
-    print("{}".format(request.json))
+
     json = request.json
     app.logger.debug("Submitted request: %s", json)
+
     data = Outcomes.update_student_scores(canvas, json['course_id'], json['student_id_list'])
+
     return jsonify({'success': data})
