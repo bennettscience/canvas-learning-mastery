@@ -16,11 +16,11 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library][https:/
   - [ ] Configs table
 - [x] Link assignment to outcome
 - [ ] Per-student reporting
-- [ ] Routing
+- [x] Routing
   - [X] Login required view
   - [X] standardize `id` structures
-  - [ ] Student view?
-- [ ] Update assignment scores on Canvas
+  - ~~[ ] Student view?~~
+- [x] Update assignment scores on Canvas
 
 ### Authentication
 
@@ -32,9 +32,9 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library][https:/
 - [ ] navbar
 - [ ] App config settings
 - [ ] Canvas URL
-- [ ] Dashboard
+- [x] Dashboard
   - [X] Course picker
-- [ ] Course
-  - [ ] Define assignment category ID
-    - [ ] Fetch assignments in the group
-  - [ ] Import course outcomes by group
+- [x] Course
+  - [x] Define assignment category ID
+    - [x] Fetch assignments in the group
+  - [x] Import course outcomes by group
