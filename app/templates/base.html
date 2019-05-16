@@ -120,7 +120,7 @@
           }),
           contentType: "application/json",
           success: function(resp) {
-            console.log(resp);
+            // console.log(resp);
             for (var i = 0; i < resp.success.length; i++) {
               var student = resp.success[i];
 
@@ -130,14 +130,11 @@
               $(`#${studentId}`)
                 .children("td")
                 .each(function(i, el) {
+                  console.log(el)
                   array.filter(function(item) {
                     if ($(el).attr("data-outcome") == item.outcome_id) {
-                      console.log("matched outcome");
-                      if ($(el).text() == 1 && item.outcome_score < 3) {
-                        $(el).addClass("lower");
-                      } else if ($(el).text() == 0 && item.outcome_score > 3) {
-                        $(el).addClass("higher");
-                      }
+                      console.log(item)
+                      $(el).html(item.assignment_score);
                     }
                   });
                 });
