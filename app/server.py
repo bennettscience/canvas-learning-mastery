@@ -1,4 +1,6 @@
 import json, pprint
+import multiprocessing as mp
+from functools import partial
 from app import app, db, logging
 from app.models import Outcome, Assignment, User
 from flask_login import current_user
@@ -34,7 +36,7 @@ class Outcomes:
             # Store each outcome in the database
             for o in outcomes:
                 outcome_data = o.outcome
-                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], score=None)
+                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], score=None, course_id=course_id)
                 app.logger.debug('New Outcome: %s', outcome)
                 db.session.add(outcome)
                 db.session.commit()
@@ -95,6 +97,65 @@ class Outcomes:
             })
 
         return data
+    
+    def process_submissions(student_id, course):
+        app.logger.debug("Processing %s", student_id)
+        # Instantiate a list to hold outcomes for the student
+        obj = {}
+        obj['outcomes'] = []
+        obj['student_id'] = student_id
+
+        rollups = course.get_outcome_result_rollups(
+            user_ids=student_id, aggregate="course", aggregate_stat="mean")
+
+        raw_data = rollups['rollups'][0]['scores']
+
+        for outcome in raw_data:
+            outcome_id = int(outcome['links']['outcome'])
+            outcome_score = outcome['score']
+
+            query = Assignment.query.filter_by(
+                outcome_id=outcome_id).first()
+            if query is not None:
+                assignment_id = query.id
+
+                assignment = course.get_assignment(assignment_id)
+                submission = assignment.get_submission(student_id)
+                app.logger.info('Submission for %s: %s', assignment_id, submission.score)
+
+                item = {'outcome_id': outcome_id,
+                        'outcome_score': outcome_score, 'assignment_id': assignment_id}
+
+                if outcome['score'] >= 3 and submission.score == 0.0:
+                    app.logger.debug('Passing outcome, setting submission to 1.')
+                    item['assignment_score'] = 1
+                    submission.edit(submission={'posted_grade':1.0})
+                elif outcome['score'] < 3 and submission.score > 1.0:
+                    app.logger.debug('Failing outcome, setting submission to 0.')
+                    item['assignment_score'] = 0
+                    submission.edit(submission={'posted_grade':0.0})
+                else:
+                    item['assignment_score'] = submission.score
+
+                obj['outcomes'].append(item)
+
+        return obj
+    
+    @classmethod
+    def update_student_scores(cls, canvas, course_id, student_ids):
+        app.logger.debug("starting pool for processing")
+        pool = mp.Pool(mp.cpu_count())
+
+        course = canvas.get_course(course_id)
+
+        # define args for the processing function
+        items = partial(cls.process_submissions, course=course)
+
+        # Post the list to the process function, wait for the results
+        result = pool.map(items, student_ids)
+        # app.logger.debug("Result array: %s", result)
+
+        return result
 
 class Assignments:
 
@@ -139,7 +200,7 @@ class Assignments:
             # Process the Submissions into usable JSON objects
             for sub in submissions:
                 item = json.loads(sub.to_json())
-                app.logger.debug('Item JSON: %s', item)
+                app.logger.debug('Item JSON created')
 
                 if item['submissions']:
                     if item['user_id'] in student_list:
@@ -172,3 +233,7 @@ class Assignments:
             return None
 
         return json_data
+
+    @staticmethod
+    def update_assignment_scores(canvas, course_id, assignments_list):
+        pass
