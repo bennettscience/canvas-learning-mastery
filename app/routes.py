@@ -115,24 +115,18 @@ def dashboard():
 
     return render_template('dashboard.html', title='Courses', courses=courses)
 
-@app.route('/course/<course_id>', methods=['GET', 'POST'])
+@app.route('/course/<course_id>', methods=['GET'])
 def course(course_id):
     app.logger.info('Course requested: %s', course_id)
     canvas = init_canvas(session['oauth_token']['access_token'])
     query = canvas.get_course(course_id).get_assignment_groups()
 
-    assignment_groups = [(str(a.id), a.name) for a in query]
-
     form = StoreOutcomesForm(request.values, id=course_id)
+
+    assignment_groups = [(str(a.id), a.name) for a in query]
 
     app.logger.debug('Setting form assignment groups to: %s', assignment_groups)
     form.assignment_groups.choices = assignment_groups
-
-    if request.method == 'POST':
-        app.logger.debug('Form submission')
-        app.logger.debug('Course ID: %s, Assignment group ID: %s', form.id.data, form.assignment_groups.data)
-        outcomes = Outcomes.save_course_data(canvas, form.id.data, form.assignment_groups.data)
-        # return redirect(url_for('course/<id>', id))
 
     app.logger.info('Checking for outcomes')
     outcomes = Outcome.query.filter(Outcome.course_id == course_id)
@@ -156,7 +150,6 @@ def course(course_id):
     else:
         app.logger.info('Found assignments, getting scores')
         scores = Assignments.get_all_assignment_scores(canvas, course_id)
-        app.logger.debug(scores)
 
     return render_template('course.html',
         title='Canvas course',
@@ -165,6 +158,17 @@ def course(course_id):
         assignments=assignments,
         form=form
     )
+
+@app.route('/save', methods=['POST'])
+def save_outcomes():
+    data = request.values
+    canvas = init_canvas(session['oauth_token']['access_token'])
+    app.logger.debug('Form submission')
+    app.logger.debug(data)
+    app.logger.debug('Course ID: %s, Assignment group ID: %s', data['id'], data['assignment_groups'])
+    outcomes = Outcomes.save_course_data(canvas, data['id'], data['assignment_groups'])
+    # return jsonify({'success': outcomes})
+    return redirect(url_for('course', course_id=data['id']))
 
 @app.route('/align', methods=['POST'])
 def align_items():
@@ -177,8 +181,10 @@ def align_items():
 
 @app.route('/outcomes', methods=['POST'])
 def get_user_outcomes():
+    app.logger.debug('Requested score update.')
     canvas = init_canvas(session['oauth_token']['access_token'])
     print("{}".format(request.json))
     json = request.json
-    data = Outcomes.get_user_outcomes(canvas, json['course_id'], json['student_id_list'])
+    app.logger.debug("Submitted request: %s", json)
+    data = Outcomes.update_student_scores(canvas, json['course_id'], json['student_id_list'])
     return jsonify({'success': data})
