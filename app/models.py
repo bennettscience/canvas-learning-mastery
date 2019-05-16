@@ -2,9 +2,14 @@ from app import app, db, login
 from flask_login import UserMixin
 
 class User(UserMixin, db.Model):
-    """ User DB Model
+    """ User Object
         Store the User object for authentication and matching courses
-
+        id : unique int
+        canvas_id : Canvas LMS user ID
+        name : user name
+        token : Canvas OAuth access token
+        expiration : Timestamp expiration of the token
+        refresh_token : sent if the expiration is past
     """
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
@@ -22,7 +27,7 @@ def load_user(id):
     return User.query.get(int(id))
 
 class Outcome(db.Model):
-    """ Outcome object for the database.
+    """ Outcome object
       id : unique int
       title : string name
       score : binary 0 or 1
@@ -53,6 +58,12 @@ class Outcome(db.Model):
         return '< {} || {} || Assignment: {} >'.format(self.title, self.id, self.assignment_id)
 
 class Assignment(db.Model):
+    """ Assignment object model
+        id : Canvas Assignment ID
+        title : Canvas Assignment title
+        course_id : Parent course for the assignment
+        outcome_id : Linked outcome for updating scores
+    """
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128))
     score = db.Column(db.Integer)
@@ -63,12 +74,3 @@ class Assignment(db.Model):
 
     def __repr__(self):
         return '< {} || {} || {} || {}>'.format(self.id, self.title, self.course_id, self.outcome_id)
-
-
-# # TODO: Figure out how to actually use an association table
-# class OutcomeAssignmentLinks(db.Model):
-#     __tablename__ = 'alignments'
-#     assignment_id = db.Column(db.Integer, db.ForeignKey('assignment.id'), primary_key=True)
-#     outcome_id = db.Column(db.Integer, db.ForeignKey('outcome.id'), primary_key=True)
-#     assignment = db.relationship(Assignment, backref="outcome_link", lazy='dynamic')
-#     outcome = db.relationship(Outcome, backref="assignment_link", lazy='dynamic')
