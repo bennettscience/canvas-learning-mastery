@@ -7,3 +7,4 @@ tests.py
 .flaskenv
 classTest.py
 .vscode
+migrations/versions/__pycache__
