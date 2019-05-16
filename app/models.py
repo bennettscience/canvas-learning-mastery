@@ -50,7 +50,7 @@ class Outcome(db.Model):
         return self.assignment_id is not None
 
     def __repr__(self):
-        return '< {} || {} || Assignment: {} >'.format(self.title, self.id, self.assignments)
+        return '< {} || {} || Assignment: {} >'.format(self.title, self.id, self.assignment_id)
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
