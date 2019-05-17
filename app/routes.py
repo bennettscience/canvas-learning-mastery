@@ -1,4 +1,5 @@
 import requests
+import time
 from flask import flash, json, jsonify, redirect, render_template, request, session, url_for
 from requests_oauthlib import OAuth2Session
 from app import app, db
@@ -11,8 +12,8 @@ from canvasapi import Canvas
 oauth = OAuth2Session(app.config['OAUTH_CREDENTIALS']['canvas']['id'],
                       redirect_uri=app.config['OAUTH_CREDENTIALS']['canvas']['redirect_url'])
 
+
 def init_canvas(token):
-    
     """ Launch a new Canvas object
     :type token: Str
     :param token: OAuth token
@@ -22,21 +23,37 @@ def init_canvas(token):
     canvas = Canvas('https://elkhart.test.instructure.com', token)
     return canvas
 
+
 def refresh_oauth_token(user):
-    
     """ Get the user refresh token for API calls
     :type user: Int
     :param user: Canvas user ID
 
     :rtype: Str token
     """
-    token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], \
-    grant_type='refresh_token',
-    client_id=app.config['OAUTH_CREDENTIALS']['canvas']['id'],
-    client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
-    refresh_token=user.refresh_token)
+    token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'],
+                              grant_type='refresh_token',
+                              client_id=app.config['OAUTH_CREDENTIALS']['canvas']['id'],
+                              client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
+                              refresh_token=user.refresh_token)
 
     return token
+
+@app.route('/refresh')
+def refresh():
+    token = session['oauth_token']
+    client_id = app.config['OAUTH_CREDENTIALS']['canvas']['id']
+    refresh_url = app.config['OAUTH_CREDENTIALS']['canvas']['token_url']
+    
+    extra = {
+        'client_id': client_id,
+        'client_secret': app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
+        'refresh_token': token['refresh_token'],
+    }
+
+    canvas = OAuth2Session(client_id, token=token)
+    session['oauth_token'] = canvas.refresh_token(refresh_url, **extra)
+    return jsonify(session['oauth_token'])
 
 @app.route('/')
 @app.route('/index')
@@ -44,12 +61,28 @@ def index():
 
     app.logger.info('Index loaded')
     if not current_user.is_anonymous:
-        app.logger.info('Current user: %s', current_user.canvas_id)
+        app.logger.info('Current user: %s', current_user)
+        expire = session['oauth_token']['expires_at']
+        app.logger.info('Token expires at: %s', expire)
+
+        if time.time() > expire:
+            # get a new access token and store it
+            token = session['oauth_token']
+            client_id = app.config['OAUTH_CREDENTIALS']['canvas']['id']
+            refresh_url = app.config['OAUTH_CREDENTIALS']['canvas']['token_url']
+
+            extra = {
+                'client_id': client_id,
+                'client_secret': app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
+                'refresh_token': token['refresh_token'],
+            }
+
+            oauth_refresh = OAuth2Session(client_id, token=token)
+            session['oauth_token'] = oauth_refresh.refresh_token(refresh_url, **extra)
         return redirect(url_for('dashboard'))
-    # if current_user:
-    #     if current_user.expiration < 
-    #     return redirect(url_for('user', user_id=current_user.canvas_id))
-    return render_template('login.html', title='Canvas Mastery Doctor')
+    else:
+        return render_template('login.html', title='Canvas Mastery Doctor')
+
 
 @app.route('/logout')
 def logout():
@@ -72,9 +105,9 @@ def logout():
     # Finally return the user to the index
     return redirect(url_for('index'))
 
+
 @app.route('/login')
 def login():
-    
     """ Log in to the app via OAuth through Canvas
     :methods: GET
     :responses:
@@ -84,14 +117,15 @@ def login():
             description: Bad request.
     """
     app.logger.info('Launching oauth flow')
-    authorization_url, state = oauth.authorization_url(app.config['OAUTH_CREDENTIALS']['canvas']['authorization_url'])
+    authorization_url, state = oauth.authorization_url(
+        app.config['OAUTH_CREDENTIALS']['canvas']['authorization_url'])
 
     session['oauth_state'] = state
     return redirect(authorization_url)
 
+
 @app.route('/callback')
 def callback():
-    
     """ Perform final authorization of the user
     :methods: GET
     :responses:
@@ -101,12 +135,12 @@ def callback():
             description: Bad request
     """
     app.logger.info('Received token, validating with Canvas')
-    token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], 
-                                    client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
-                                    authorization_response=request.url,
-                                    state=session['oauth_state'],
-                                    replace_tokens=True
-                                    )
+    token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'],
+                              client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
+                              authorization_response=request.url,
+                              state=session['oauth_state'],
+                              replace_tokens=True
+                              )
 
     session['oauth_token'] = token
 
@@ -128,7 +162,7 @@ def callback():
             db.session.commit()
     else:
         app.logger.info('Creating new user in db')
-        
+
         # User doesn't exist, create a new one
         user = User(canvas_id=user_id,
                     name=user_name,
@@ -141,9 +175,9 @@ def callback():
 
     return redirect(url_for('dashboard'))
 
+
 @app.route('/dashboard')
 def dashboard():
-    
     """ List the logged-in user's courses
     :methods: GET
 
@@ -159,9 +193,9 @@ def dashboard():
 
     return render_template('dashboard.html', title='Courses', courses=courses)
 
+
 @app.route('/course/<course_id>', methods=['GET'])
 def course(course_id):
-    
     """ Single course view
     :type course_id: Int
     :param course_id: Canvas course ID
@@ -182,7 +216,8 @@ def course(course_id):
     form = StoreOutcomesForm(request.values, id=course_id)
     assignment_groups = [(str(a.id), a.name) for a in query]
 
-    app.logger.debug('Setting form assignment groups to: %s', assignment_groups)
+    app.logger.debug('Setting form assignment groups to: %s',
+                     assignment_groups)
     form.assignment_groups.choices = assignment_groups
 
     # Look up any existing Outcomes by course ID
@@ -207,16 +242,16 @@ def course(course_id):
         scores = Assignments.get_all_assignment_scores(canvas, course_id)
 
     return render_template('course.html',
-        title='Canvas course',
-        outcomes=outcomes,
-        scores=scores,
-        assignments=assignments,
-        form=form
-    )
+                           title='Canvas course',
+                           outcomes=outcomes,
+                           scores=scores,
+                           assignments=assignments,
+                           form=form
+                           )
+
 
 @app.route('/save', methods=['POST'])
 def save_outcomes():
-    
     """ Save Outcomes from the course into the database
     :methods: POST
 
@@ -228,17 +263,19 @@ def save_outcomes():
     # Instantiate a new Canvas object
     canvas = init_canvas(session['oauth_token']['access_token'])
 
-    app.logger.debug('Course ID: %s, Assignment group ID: %s', data['id'], data['assignment_groups'])
+    app.logger.debug('Course ID: %s, Assignment group ID: %s',
+                     data['id'], data['assignment_groups'])
 
     # Store the course Outcomes
-    outcomes = Outcomes.save_course_data(canvas, data['id'], data['assignment_groups'])
+    outcomes = Outcomes.save_course_data(
+        canvas, data['id'], data['assignment_groups'])
 
     # Reload the page
     return redirect(url_for('course', course_id=data['id']))
 
+
 @app.route('/align', methods=['POST'])
 def align_items():
-    
     """ Align an Assignment to an Outcome
     :methods: POST
     """
@@ -253,9 +290,9 @@ def align_items():
     db.session.commit()
     return jsonify({'success': [data['outcome_id'], data['assignment_id']]})
 
+
 @app.route('/outcomes', methods=['POST'])
 def get_user_outcomes():
-
     """ Get the Outcomes for the students
     :raises:
 
@@ -269,6 +306,7 @@ def get_user_outcomes():
     json = request.json
     app.logger.debug("Submitted request: %s", json)
 
-    data = Outcomes.update_student_scores(canvas, json['course_id'], json['student_id_list'])
+    data = Outcomes.update_student_scores(
+        canvas, json['course_id'], json['student_id_list'])
 
     return jsonify({'success': data})
