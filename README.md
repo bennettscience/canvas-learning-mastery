@@ -47,19 +47,21 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https:/
 - [x] Routing
   - [X] Login required view
   - [X] standardize `id` structures
-  - ~~[ ] Student view?~~
+  - ~~Student view?~~
 - [x] Update assignment scores on Canvas
+- [ ] Flask-Session for server-side key storage
 
 ### Authentication
 
 - [X] OAuth2 Login
+  - [ ] Refresh OAuth session
 - [X] `Canvas` object for API calls
 
 ### Frontend
 
 - [ ] navbar
 - [ ] App config settings
-- [ ] Canvas URL
+- [ ] Config Canvas URL
 - [x] Dashboard
   - [X] Course picker
 - [x] Course
