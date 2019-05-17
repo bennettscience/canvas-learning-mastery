@@ -54,7 +54,7 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https:/
 ### Authentication
 
 - [X] OAuth2 Login
-  - [ ] Refresh OAuth session
+  - [x] Refresh OAuth session
 - [X] `Canvas` object for API calls
 
 ### Frontend
@@ -64,7 +64,8 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https:/
 - [ ] Config Canvas URL
 - [x] Dashboard
   - [X] Course picker
-- [x] Course
+- [ ] Course
   - [x] Define assignment category ID
     - [x] Fetch assignments in the group
   - [x] Import course outcomes by group
+  - [ ] Separate rosters by course section
