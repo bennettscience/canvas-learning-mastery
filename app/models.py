@@ -15,9 +15,9 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     canvas_id = db.Column(db.String(64), nullable=False, unique=True)
     name = db.Column(db.String(64), nullable=False)
-    token = db.Column(db.String, nullable=False)
+    token = db.Column(db.String(255), nullable=False)
     expiration = db.Column(db.Integer)
-    refresh_token = db.Column(db.String)
+    refresh_token = db.Column(db.String(255))
 
     def __repr__(self):
         return 'User: {} | {} '.format(self.name, self.canvas_id)

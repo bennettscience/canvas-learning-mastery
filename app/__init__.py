@@ -28,4 +28,3 @@ migrate = Migrate(app, db)
 toolbar = DebugToolbarExtension(app)
 
 from app import routes, models
-    
