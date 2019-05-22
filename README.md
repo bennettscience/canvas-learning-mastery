@@ -55,6 +55,7 @@ When a student reaches master (Outcome aggregate = 3 or higher) the linked Assig
   - ~~Student view?~~
 - [x] Update assignment scores on Canvas
 - [ ] Flask-Session for server-side key storage
+- [ ] Flask-Cache to reduce API calls
 - [ ] Config
   - [ ] User-defined Mastery score
   - [ ] User-defined Assignment toggle
@@ -77,3 +78,17 @@ When a student reaches master (Outcome aggregate = 3 or higher) the linked Assig
     - [x] Fetch assignments in the group
   - [x] Import course outcomes by group
   - [ ] Separate rosters by course section
+
+### Screenshots
+
+#### Active courses
+
+![Active courses](./app/static/img/dashboard.png)
+
+#### Align Outcomes to Assignments
+
+![Alignments](./app/static/img/alignments.png)
+
+#### Student scores
+
+![Student scores](./app/static/img/scores.png)
