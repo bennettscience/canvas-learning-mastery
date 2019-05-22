@@ -58,41 +58,6 @@ class Outcomes:
 
         return data
 
-    # @staticmethod
-    # def get_user_outcomes(canvas, course_id, student_id_list):
-    #     """ Get outcomes for all students in a given course 
-
-    #     """
-    #     data = []
-    #     course = canvas.get_course(course_id)
-
-    #     print(student_id_list)
-
-    #     for student in student_id_list:
-    #         print(student)
-    #         outcomes = []
-    #         rollups = course.get_outcome_result_rollups(user_ids=student, aggregate="course", aggregate_stat="mean")
-
-    #         raw_data = rollups['rollups'][0]['scores']
-
-    #         for outcome in raw_data:
-    #             outcome_id = int(outcome['links']['outcome'])
-    #             outcome_score = outcome['score']
-
-    #             query = Assignment.query.filter_by(outcome_id=outcome_id).first()
-    #             if query is not None:
-    #                 assignment_id = query.id
-
-    #             outcome = {'outcome_id': outcome_id, 'outcome_score': outcome_score, 'assignment_id': assignment_id}
-    #             outcomes.append(outcome)
-
-    #         data.append({
-    #             'student_id': student,
-    #             'outcomes': outcomes,
-    #         })
-
-    #     return data
-    
     @staticmethod
     def process_submissions(student_id, course):
 
@@ -198,12 +163,12 @@ class Assignments:
         """ Request current scores for students in the course
         :type canvas: Object
         :param canvas: Canvas object
-    
+
         :type course_id: Int
         :param course_id: Canvas course ID
-    
+
         :raises:
-    
+
         :rtype: Object json_data
         """    
         # make a couple lists to hold processed data
@@ -236,7 +201,7 @@ class Assignments:
                 item = json.loads(e.to_json())
                 student_list.append(item['user']['id'])
 
-            app.logger.debug('Requested list: %s', student_list)
+            app.logger.debug('Requested student list: %s', student_list)
 
             # Request the submissions from Canvas sorted by user
             submissions = course.get_multiple_submissions( \
