@@ -22,13 +22,9 @@ No student data is stored in the app. The database is used to map an Outcome to 
 
 `pip install -r requirements.txt`
 
-## Canvas Setup
-
-This uses OAuth to log the user in directly to Canvas. You will need to go to your Canvas installation and add a Developer Key in the Admin console.
-
-The app is configured to redirect to a `localhost` address. If this is being deployed on a web server, make sure to update the URL in the Developer Key options as well as in the config file.
-
 ## Config
+
+Add a Developer Key for the application in your Canvas instance.
 
 Set up your config with `cp config-example.py config.py` in your directory. Update your config file with your Canvas Developer Key specifics. Make sure you edit your URL root in each of the URLs listed.
 
@@ -59,7 +55,7 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https:/
 
 ### Frontend
 
-- [ ] navbar
+- [x] navbar
 - [ ] App config settings
 - [ ] Config Canvas URL
 - [x] Dashboard
