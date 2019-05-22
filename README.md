@@ -30,6 +30,16 @@ Set up your config with `cp config-example.py config.py` in your directory. Upda
 
 The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https://github.com/ucfopen/canvasapi/tree/master).
 
+## Canvas Course Structure
+
+The settings are not configurable right now. To use the application, you should have the following:
+
+- Outcomes imported into your Canvas course.
+- Assignments assessing the Outcomes (either quizzes or rubrics)
+- Assignments to be updated by the app. **These assingments should be worth one point each.**
+
+When a student reaches master (Outcome aggregate = 3 or higher) the linked Assignment will be toggled to 1/1. If it is below 3, the Assignment is toggled to 0/1.
+
 ## TODO
 
 ### Backend
@@ -37,7 +47,6 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https:/
 - [x] Database models
   - [x] outcomes
   - [x] assignments
-  - [ ] Configs table
 - [x] Link assignment to outcome
 - [ ] Per-student reporting
 - [x] Routing
@@ -46,6 +55,9 @@ The API calls to Canvas are all done with [UCF Open's CanvasAPI library](https:/
   - ~~Student view?~~
 - [x] Update assignment scores on Canvas
 - [ ] Flask-Session for server-side key storage
+- [ ] Config
+  - [ ] User-defined Mastery score
+  - [ ] User-defined Assignment toggle
 
 ### Authentication
 
