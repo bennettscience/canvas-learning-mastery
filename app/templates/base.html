@@ -15,7 +15,17 @@
     {% endif %}
   </head>
   <body>
+    <nav>
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('about') }}">About</a>
+        {% if not current_user.is_anonymous %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+        {% endif %}
+    </nav>
+    <div class="wrap">
     {% block content %} {% endblock %} {% block scripts %}
+    </div>
     <script type="text/javascript">
       var changeHandler = function(e) {
         var elem = e;
@@ -156,12 +166,12 @@
 
       $(document).ajaxStart(function() {
         console.log("started ajax");
-        $("#loader").show();
+        $(".loader-wrap").show();
       });
 
       $(document).ajaxStop(function() {
         console.log("stopped ajax");
-        $("#loader").hide();
+        $(".loader-wrap").hide();
       });
     </script>
     {% endblock %}

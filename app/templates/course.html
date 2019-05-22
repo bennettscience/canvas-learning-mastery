@@ -1,8 +1,10 @@
 {% extends 'base.html' %} {% block content %}
-<div class="">
-  <h1>Hey there</h1>
-  <div><a href="{{url_for('dashboard')}}"><< Dashboard</a></div>
-  <button id="check-scores" onclick="processTable()">Check Scores</button>
+{% if scores is not none %}
+<div class="scores">
+  <div class="loader-wrap">
+    <div class="message">
+      Loading...
+    </div>
   <svg
     id="loader"
     width="100%"
@@ -32,7 +34,7 @@
         calcMode="linear"
         values="0 50 50;360 50 50"
         keyTimes="0;1"
-        dur="1s"
+        dur="2s"
         begin="0s"
         repeatCount="indefinite"
       ></animateTransform>
@@ -65,13 +67,16 @@
       ></animateTransform>
     </circle>
   </svg>
+  </div>
   <table id="student-table">
-    <tr>
-      <th>Student</th>
-      {% if scores is not none %} {% for item in scores[0]['submissions'] %}
+    <thead>
+      <th>
+        <div style="width: 150px">Student</div>
+      </th>
+      {% for item in scores[0]['submissions'] %}
       <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
       {% endfor %}
-    </tr>
+    </thead>
     {% for item in scores %}
     <tr id="{{item['canvas_id']}}" class="row">
       <td data-name="{{item['user_name']}}">{{item['sis_id']}}</td>
@@ -82,16 +87,17 @@
       {% endfor %}
     </tr>
     {% endfor %}
-    {% endif %}
   </table>
+  <button id="update-scores" onclick="processTable()">Update Scores</button>
 </div>
+{% endif %}
 
 <div id="alignmnets">
   <h1>Alignments</h1>
-  <p>Align each outcome with an assignment to update on Canvas</p>
+  <p>Select the Canvas Assignment group you want to align Outcomes to:</p>
   <form class="" action="/save" method="post">
     <p>{{ form.id }}</p>
-    <p>{{ form.assignment_groups }}</p>
+    <p class="form-select">{{ form.assignment_groups}}</p>
     <p>{{ form.submit() }}</p>
   </form>
   <table id="alignment-table">
@@ -106,6 +112,7 @@
       <td>{{outcome.id}}</td>
       <td>{{outcome.title}}</td>
       <td>
+        <div class="outcome form-select">
         <select class="" name="">
           <option value="None">-</option>
           {% for a in assignments %} {% if outcome.assignment and
@@ -115,6 +122,7 @@
           <option value="{{a.id}}">{{a.title}}</option>
           {% endif %} {% endfor %}
         </select>
+        </div>
       </td>
       <td class="confirm">&#10003; - refreshing page...</td>
       {% endfor %}
