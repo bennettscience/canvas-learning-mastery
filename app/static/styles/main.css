@@ -176,6 +176,11 @@ select::-ms-expand {
   display: none;
 }
 
+.table-wrap {
+  height: 550px;
+  overflow: auto;
+}
+
 .scores {
   display: block;
   position: relative;
