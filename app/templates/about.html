@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block content %}
+<div class="about">
+<h1>Learning Mastery Helper</h1>
+<hr />
+<p>The Canvas Learning Mastery gradebook is a great way to track student learning outcomes defined in the course. However, it does not affect the traditional gradebook.</p>
+<p>This application allows you to connect Outcomes in a course to Assignments which will be automatically scored. This way, you can update grades all at once rather than one at a time.</p>
+<hr />
+<h2>FAQ</h2>
+<h3>What data is stored?</h3>
+<p>This app stores some information about your Canvas account like your user ID and course ID's. It also stores Outcome and Assignment ID numbers to make the association.</p>
+<p><b>No student information is saved to the database.</b> Student names and scores are pulled in real time from Canvas. When you leave the site, that data is lost until your next login.</p>
+<h3>Do I need an account?</h3>
+<p>You need an account in the sense that you define your Canvas address at login. The app makes a request to Canvas on your behalf and you need to allow that connection to take place.</p>
+<h3>Who are you?</h3>
+<a href="https://ohheybrian.com">I'm Brian.</p>
+</div>
+
+{% endblock content %}
