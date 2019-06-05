@@ -34,7 +34,7 @@ nav:first-child {
 }
 
 .wrap > div {
-  width: 75%;
+  width: 95vw;
   margin: 0 auto;
   background-color: #fefefe;
   border: 1px solid #e0e0e0;
@@ -67,7 +67,7 @@ nav:first-child {
 
 .courses {
   display: block;
-  min-width: 75%;
+  min-width: 95vw;
   margin: 0 auto;
   background-color: #fefefe;
   border: 1px solid #e0e0e0;
