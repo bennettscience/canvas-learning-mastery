@@ -25,6 +25,6 @@ db = SQLAlchemy(app)
 login = LoginManager(app)
 login.login_view = 'index'
 migrate = Migrate(app, db)
-toolbar = DebugToolbarExtension(app)
+# toolbar = DebugToolbarExtension(app)
 
 from app import routes, models
