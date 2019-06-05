@@ -16,11 +16,10 @@
   </head>
   <body>
     <nav>
-        <a href="{{ url_for('index') }}">Home</a>
-        <a href="{{ url_for('about') }}">About</a>
+        <!-- <a href="{{ url_for('about') }}">About</a> -->
         {% if not current_user.is_anonymous %}
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <!-- <a href="{{ url_for('logout') }}">Logout</a> -->
         {% endif %}
     </nav>
     <div class="wrap">
