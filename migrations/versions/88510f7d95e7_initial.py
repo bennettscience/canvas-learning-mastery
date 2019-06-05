@@ -1,8 +1,8 @@
-"""initial mysql create
+"""initial
 
-Revision ID: ddbd3eb45891
+Revision ID: 88510f7d95e7
 Revises: 
-Create Date: 2019-05-22 11:14:10.438532
+Create Date: 2019-05-28 10:01:02.358894
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ddbd3eb45891'
+revision = '88510f7d95e7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -31,14 +31,12 @@ def upgrade():
     op.create_table('outcome',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=64), nullable=True),
-    sa.Column('score', sa.Integer(), nullable=True),
     sa.Column('course_id', sa.Integer(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('assignment',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=128), nullable=True),
-    sa.Column('score', sa.Integer(), nullable=True),
     sa.Column('course_id', sa.Integer(), nullable=True),
     sa.Column('outcome_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['outcome_id'], ['outcome.id'], ),
