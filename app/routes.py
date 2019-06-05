@@ -1,6 +1,6 @@
-import requests
 import time
-from flask import flash, json, jsonify, redirect, render_template, request, session, url_for
+from flask import jsonify, redirect, render_template, request, session, url_for
+from pylti.flask import lti
 from requests_oauthlib import OAuth2Session
 from app import app, db
 from app.models import Outcome, Assignment, User
@@ -74,8 +74,9 @@ def refresh():
     print(time.time())
     return jsonify(session['oauth_token'])
 
-@app.route('/')
-@app.route('/index')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+# @lti(request='initial', role='any', app=app)
 def index():
 
     app.logger.info('Index loaded')
@@ -107,7 +108,7 @@ def index():
         return render_template('login.html', title='Canvas Mastery Doctor')
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET'])
 def logout():
     # Delete the user key from Canvas
     # The canvasapi module doesn't have an endpoint, so we need
@@ -129,7 +130,7 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     """ Log in to the app via OAuth through Canvas
     :methods: GET
@@ -147,7 +148,7 @@ def login():
     return redirect(authorization_url)
 
 
-@app.route('/callback')
+@app.route('/callback', methods=['GET'])
 def callback():
     """ Perform final authorization of the user
     :methods: GET
@@ -157,7 +158,7 @@ def callback():
         400:
             description: Bad request
     """
-    app.logger.info('Received token, validating with Canvas')
+    app.logger.info('Received token, validating with Canvas,')
     token = oauth.fetch_token(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'],
                               client_secret=app.config['OAUTH_CREDENTIALS']['canvas']['secret'],
                               authorization_response=request.url,
@@ -199,7 +200,7 @@ def callback():
     return redirect(url_for('dashboard'))
 
 
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     """ List the logged-in user's courses
     :methods: GET
