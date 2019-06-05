@@ -21,8 +21,6 @@ class Outcomes:
         :type assignment_group_id: Int
         :param assignment_group_id: Assignment group to update
     
-        :raises:
-    
         :rtype: List data
         """   
 
@@ -44,7 +42,7 @@ class Outcomes:
             # Store each outcome in the database
             for o in outcomes:
                 outcome_data = o.outcome
-                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], score=None, course_id=course_id)
+                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], course_id=course_id)
                 app.logger.debug('New Outcome: %s', outcome)
                 db.session.add(outcome)
                 db.session.commit()
@@ -107,13 +105,17 @@ class Outcomes:
                 item = {'outcome_id': outcome_id,
                         'outcome_score': outcome_score, 'assignment_id': assignment_id}
 
+                # Set a None score to 0
+                if submission.score is None:
+                    submission.score = 0
+
                 # Check the conditions and update the Canvas gradebook
                 if outcome['score'] >= 3 and submission.score == 0.0:
                     item['assignment_score'] = 1
-                    submission.edit(submission={'posted_grade':1.0})
-                elif outcome['score'] < 3 and submission.score > 1.0:
+                    submission.edit(submission={'posted_grade': 1})
+                elif outcome['score'] < 3 and submission.score >= 1.0:
                     item['assignment_score'] = 0
-                    submission.edit(submission={'posted_grade':0.0})
+                    submission.edit(submission={'posted_grade': 0})
                 else:
                     item['assignment_score'] = submission.score
 
@@ -210,7 +212,7 @@ class Assignments:
             # Process the Submissions into usable JSON objects
             for sub in submissions:
                 item = json.loads(sub.to_json())
-                app.logger.debug('Item JSON created')
+                # app.logger.debug('Item JSON created')
 
                 if item['submissions']:
                     if item['user_id'] in student_list:
