@@ -24,7 +24,7 @@ class User(UserMixin, db.Model):
 
 @login.user_loader
 def load_user(id):
-    return User.query.get(int(id))
+    return User.query.get(id)
 
 class Outcome(db.Model):
     """ Outcome object
@@ -35,7 +35,6 @@ class Outcome(db.Model):
       """
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(64))
-    score = db.Column(db.Integer)
     course_id = db.Column(db.Integer)
     assignment_id = db.relationship('Assignment', uselist=False, back_populates='outcome')
 
@@ -66,7 +65,6 @@ class Assignment(db.Model):
     """
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128))
-    score = db.Column(db.Integer)
     course_id = db.Column(db.Integer)
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcome.id'))
 
