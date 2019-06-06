@@ -3,7 +3,6 @@ venv
 /logs
 config.py
 app.db
-tests.py
 .flaskenv
 classTest.py
 .vscode
