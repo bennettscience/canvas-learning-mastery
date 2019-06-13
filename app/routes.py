@@ -307,7 +307,7 @@ def save_outcomes():
                      data['id'], data['assignment_groups'])
 
     # Store the course Outcomes
-    outcomes = Outcomes.save_course_data(
+    Outcomes.save_course_data(
         canvas, data['id'], data['assignment_groups'])
 
     # Reload the page
