@@ -42,17 +42,23 @@ class Outcomes:
             # Store each outcome in the database
             for o in outcomes:
                 outcome_data = o.outcome
-                outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], course_id=course_id)
-                app.logger.debug('New Outcome: %s', outcome)
-                db.session.add(outcome)
-                db.session.commit()
+                query = Outcome.query.get(outcome_data['id'])
+
+                if query is None:
+                    outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], course_id=course_id)
+                    app.logger.debug('New Outcome: %s', outcome)
+                    db.session.add(outcome)
+                    db.session.commit()
 
         for a in assignment_group.assignments:
-            assignment = Assignment(id=a['id'], title=a['name'], course_id=course_id)
-            data.append({'assignment_id':a['id'], 'assignment_name':a['name']})
-            app.logger.debug('New Assignment: %s', assignment)
-            db.session.add(assignment)
-            db.session.commit()
+            query = Assignment.query.get(a['id'])
+
+            if query is None:
+                assignment = Assignment(id=a['id'], title=a['name'], course_id=course_id)
+                data.append({'assignment_id':a['id'], 'assignment_name':a['name']})
+                app.logger.debug('New Assignment: %s', assignment)
+                db.session.add(assignment)
+                db.session.commit()
 
         return data
 
