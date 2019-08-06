@@ -135,7 +135,7 @@ def login():
     """ Log in to the app via OAuth through Canvas
     :methods: GET
     :responses:
-        200: 
+        200:
             description: Route to callback for final authentication
         400:
             description: Bad request.
@@ -252,7 +252,7 @@ def course(course_id):
     # Get the assignment groups from Canvas
     current_course = canvas.get_course(course_id)
     sections = current_course.get_sections()
-    
+
     query = current_course.get_assignment_groups()
 
     # Populate assignment_group_ids into the Outcomes fetch form dynamically
