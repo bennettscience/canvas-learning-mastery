@@ -29,10 +29,6 @@ nav a:hover {
   background-color: #fff;
 }
 
-nav:first-child {
-  margin-left: 10px;
-}
-
 .wrap > div {
   width: 95vw;
   margin: 0 auto;
@@ -65,7 +61,7 @@ nav:first-child {
   background-color: #5885d3
 }
 
-.courses {
+/* .courses {
   display: block;
   min-width: 95vw;
   margin: 0 auto;
@@ -91,7 +87,7 @@ nav:first-child {
   display: block;
   width: 100%;
   text-decoration: none;
-}
+} */
 
 .outcome.form-select {
   width: 100%;
