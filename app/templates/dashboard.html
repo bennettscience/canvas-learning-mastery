@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %} {% block app_content %}
 <h1></h1>
 <div class="courses">
   <table>
@@ -17,11 +17,6 @@
       {% endfor %}
     </tbody>
   </table>
-  <!-- <ul>
-    {% for course in courses %}
-    <li><a href="{{ url_for('course', course_id=course.id) }}">{{course.name}}</a></li>
-    {% endfor %}
-  </ul> -->
 </div>
 
 {% endblock %}

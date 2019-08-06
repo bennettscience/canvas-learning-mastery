@@ -13,3 +13,7 @@ class StoreOutcomesForm(FlaskForm):
     id = HiddenField('course_id')
     assignment_groups = SelectField('Assignment Group', coerce=int, choices=[])
     submit = SubmitField('Get Outcomes')
+
+class SelectSectionForm(FlaskForm):
+    id = HiddenField('course_id')
+    sections = SelectField('Course Section', coerce=int, choices=[])

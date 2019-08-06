@@ -29,10 +29,6 @@ nav a:hover {
   background-color: #fff;
 }
 
-nav:first-child {
-  margin-left: 10px;
-}
-
 .wrap > div {
   width: 95vw;
   margin: 0 auto;
@@ -51,7 +47,7 @@ nav:first-child {
   text-align: center;
   display: block;
   padding: 10px 15px;
-  /* border-radius: 2px; */
+  border-radius: 2px;
   background-color: #283c5f;
   width: 35%;
   margin: 0 auto;
@@ -98,7 +94,7 @@ nav:first-child {
 }
 
 .form-select {
-  display: block;
+  display: inline-block;
   position: relative;
   width: 25%;
   -moz-user-select: -moz-none;
@@ -108,7 +104,7 @@ nav:first-child {
   background: #ffffff;
   overflow: hidden;
   border: 1px solid #cbcbcb;
-  /* border-radius: 3px; */
+  border-radius: 3px;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(0, 0, 0, 0.07);
   -moz-transition: box-shadow 0.2s;
   -o-transition: box-shadow 0.2s;
@@ -227,6 +223,7 @@ button {
   width: 160px;
   position: absolute;
   right: 25px;
+  top: 0;
   font-size: 14px;
   background-color: rgb(27, 150, 2);
   text-transform: uppercase;
@@ -285,8 +282,8 @@ table {
   overflow: auto;
 }
 
-#alignments {
-  width: 50%;
+#scores {
+  position: relative;
 }
 
 th {
@@ -319,7 +316,7 @@ tr:not(:first-child):hover {
   background-color: rgba(0, 255, 0, 0.25);
 }
 
-[data-name] {
+/* [data-name] {
   position: relative;
   z-index: 2;
   cursor: pointer;
@@ -350,7 +347,6 @@ tr:not(:first-child):hover {
   pointer-events: none;
 }
 
-/* Show tooltip content on hover */
 [data-name]:hover:before,
 [data-name]:hover:after {
   visibility: visible;
@@ -377,4 +373,4 @@ tr:not(:first-child):hover {
   text-align: center;
   font-size: 14px;
   line-height: 1.2;
-}
+} */

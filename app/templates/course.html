@@ -1,136 +1,150 @@
-{% extends 'base.html' %} {% block content %}
-{% if scores is not none %}
-<div class="scores">
-  <div class="loader-wrap">
-    <div class="message">
-      Loading...
-    </div>
-  <svg
-    id="loader"
-    width="100%"
-    height="100%"
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 100 100"
-    preserveAspectRatio="xMidYMid"
-    class="lds-double-ring"
-  >
-    <circle
-      cx="50"
-      cy="50"
-      ng-attr-r="{{config.radius}}"
-      ng-attr-stroke-width="{{config.width}}"
-      ng-attr-stroke="{{config.c1}}"
-      ng-attr-stroke-dasharray="{{config.dasharray}}"
-      fill="none"
-      stroke-linecap="round"
-      r="40"
-      stroke-width="4"
-      stroke="#ff2202"
-      stroke-dasharray="62.83185307179586 62.83185307179586"
-    >
-      <animateTransform
-        attributeName="transform"
-        type="rotate"
-        calcMode="linear"
-        values="0 50 50;360 50 50"
-        keyTimes="0;1"
-        dur="2s"
-        begin="0s"
-        repeatCount="indefinite"
-      ></animateTransform>
-    </circle>
-    <circle
-      cx="50"
-      cy="50"
-      ng-attr-r="{{config.radius2}}"
-      ng-attr-stroke-width="{{config.width}}"
-      ng-attr-stroke="{{config.c2}}"
-      ng-attr-stroke-dasharray="{{config.dasharray2}}"
-      ng-attr-stroke-dashoffset="{{config.dashoffset2}}"
-      fill="none"
-      stroke-linecap="round"
-      r="35"
-      stroke-width="4"
-      stroke="#cbc8c1"
-      stroke-dasharray="54.97787143782138 54.97787143782138"
-      stroke-dashoffset="54.97787143782138"
-    >
-      <animateTransform
-        attributeName="transform"
-        type="rotate"
-        calcMode="linear"
-        values="0 50 50;-360 50 50"
-        keyTimes="0;1"
-        dur="1s"
-        begin="0s"
-        repeatCount="indefinite"
-      ></animateTransform>
-    </circle>
-  </svg>
-  </div>
-  <div class="table-wrap">
-  <table id="student-table">
-    <thead>
-      <th>
-        <div style="width: 150px">Student</div>
-      </th>
-      {% for item in scores[0]['submissions'] %}
-      <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
-      {% endfor %}
-    </thead>
-    {% for item in scores %}
-    <tr id="{{item['canvas_id']}}" class="row">
-      <td data-name="{{item['user_name']}}">{{item['sis_id']}}</td>
-      {% for sub in item['submissions'] %}
-      <td data-outcome="{{sub['outcome_id']}}" class="">
-        {{sub['outcome_score']}}{{sub['assignment_score']}}
-      </td>
-      {% endfor %}
-    </tr>
-    {% endfor %}
-  </table>
-  </div>
-  <button id="update-scores" onclick="processTable()">Update Scores</button>
-</div>
-{% endif %}
+{% extends 'base.html' %} {% block app_content %}
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item active">
+    <a class="nav-link" id="alignments-tab" data-toggle="tab" href="#alignments" role="tab" aria-controls="alignments"
+      aria-selected="true">Alignments</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="scores-tab" data-toggle="tab" href="#scores" role="tab" aria-controls="scores"
+      aria-selected="false">Scores</a>
+  </li>
+</ul>
 
-<div id="alignmnets">
-  <h1>Alignments</h1>
-  <p>Select the Canvas Assignment group you want to align Outcomes to:</p>
-  <form class="" action="canvaslti/save" method="post">
-    <p>{{ form.id }}</p>
-    <p class="form-select">{{ form.assignment_groups}}</p>
-    <p>{{ form.submit() }}</p>
-  </form>
-  <table id="alignment-table">
-    <tr>
-      <th>outcome id</th>
-      <th>title</th>
-      <th>aligned to</th>
-    </tr>
-    {% if outcomes is not none %}
-    {% for outcome in outcomes %}
-    <tr id="{{outcome.id}}">
-      <td>{{outcome.id}}</td>
-      <td>{{outcome.title}}</td>
-      <td>
-        <div class="outcome form-select">
-        <select class="" name="">
-          <option value="None">-</option>
-          {% for a in assignments %} {% if outcome.assignment and
-          outcome.assignment[0].id == a.id %}
-          <option value="{{a.id}}" selected="selected">{{a.title}}</option>
-          {% else %}
-          <option value="{{a.id}}">{{a.title}}</option>
-          {% endif %} {% endfor %}
-        </select>
-        </div>
-      </td>
-      <td class="confirm">&#10003; - refreshing page...</td>
-      {% endfor %}
+<div class="tab-content" id="myTabContent">
+  <div class="tab-pane fade active in" id="alignments" role="tabpanel" aria-labelledby="alignments">
+    <h1>Alignments</h1>
+    <p>Which assignment group do you want to align with Outcomes?</p>
+    <form class="" action="/save" method="post">
+      <p>{{ form.id }}</p>
+      <p class="form-select">{{ form.assignment_groups}}</p>
+      <p>{{ form.submit() }}</p>
+    </form>
+    <table id="alignment-table">
+      <tr>
+        <th>outcome id</th>
+        <th>title</th>
+        <th>aligned to</th>
+      </tr>
+      {% if outcomes is not none %}
+      {% for outcome in outcomes %}
+      <tr id="{{outcome.id}}">
+        <td>{{outcome.id}}</td>
+        <td>{{outcome.title}}</td>
+        <td>
+          <div class="outcome form-select">
+            <select class="" name="">
+              <option value="None">-</option>
+              {% for a in assignments %} {% if outcome.assignment and
+            outcome.assignment[0].id == a.id %}
+              <option value="{{a.id}}" selected="selected">{{a.title}}</option>
+              {% else %}
+              <option value="{{a.id}}">{{a.title}}</option>
+              {% endif %} {% endfor %}
+            </select>
+          </div>
+        </td>
+        <td class="confirm">&#10003; - refreshing page...</td>
+        {% endfor %}
+        {% endif %}
+      </tr>
+    </table>
+  </div>
+  
+  <div class="tab-pane fade" id="scores" role="tabpanel">
+    <h1>Scores</h1>
+    <div class="loader-wrap">
+      <div class="message">
+        Loading...
+      </div>
+    <svg
+      id="loader"
+      width="100%"
+      height="100%"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid"
+      class="lds-double-ring"
+    >
+      <circle
+        cx="50"
+        cy="50"
+        ng-attr-r="{{config.radius}}"
+        ng-attr-stroke-width="{{config.width}}"
+        ng-attr-stroke="{{config.c1}}"
+        ng-attr-stroke-dasharray="{{config.dasharray}}"
+        fill="none"
+        stroke-linecap="round"
+        r="40"
+        stroke-width="4"
+        stroke="#ff2202"
+        stroke-dasharray="62.83185307179586 62.83185307179586"
+      >
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          calcMode="linear"
+          values="0 50 50;360 50 50"
+          keyTimes="0;1"
+          dur="2s"
+          begin="0s"
+          repeatCount="indefinite"
+        ></animateTransform>
+      </circle>
+      <circle
+        cx="50"
+        cy="50"
+        ng-attr-r="{{config.radius2}}"
+        ng-attr-stroke-width="{{config.width}}"
+        ng-attr-stroke="{{config.c2}}"
+        ng-attr-stroke-dasharray="{{config.dasharray2}}"
+        ng-attr-stroke-dashoffset="{{config.dashoffset2}}"
+        fill="none"
+        stroke-linecap="round"
+        r="35"
+        stroke-width="4"
+        stroke="#cbc8c1"
+        stroke-dasharray="54.97787143782138 54.97787143782138"
+        stroke-dashoffset="54.97787143782138"
+      >
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          calcMode="linear"
+          values="0 50 50;-360 50 50"
+          keyTimes="0;1"
+          dur="1s"
+          begin="0s"
+          repeatCount="indefinite"
+        ></animateTransform>
+      </circle>
+      </svg>
+    </div>
+    <div class="section-select form-select">
+      <select id="section" class="" name="">
+        <option value="">Select section</option>
+        {% for s in sections %}
+        <option value="{{s['id']}}">{{s['name']}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="table-wrap">
+    <table id="student-table">
+      {% if scores %}
+      <thead>
+        <th>
+          <div style="width: 150px">Student</div>
+          {% for item in scores[0]['submissions'] %}
+          <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
+          {% endfor %}
+        </th>
+      </thead>
       {% endif %}
-    </tr>
-  </table>
+      <tbody></tbody>
+    </table>
+    </div>
+    <button id="update-scores" onclick="processTable()">Update Scores</button>
+  </div>
 </div>
+
 
 {% endblock %}
