@@ -11,6 +11,8 @@ class UserModelCase(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+    
+    def
 
     def test_add_outcome(self):
         o1 = Outcome(id=123, title='Some outcome 1', course_id=999)

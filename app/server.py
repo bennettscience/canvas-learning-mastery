@@ -166,7 +166,7 @@ class Outcomes:
 class Assignments:
 
     @staticmethod
-    def get_all_assignment_scores(canvas, course_id):
+    def get_all_assignment_scores(canvas, course_id, **kwargs):
 
         """ Request current scores for students in the course
         :type canvas: Object
@@ -187,6 +187,10 @@ class Assignments:
 
         # Get the Course object
         course = canvas.get_course(course_id)
+
+        if 'section_id' in kwargs:
+            course = course.get_section(kwargs.get('section_id'))
+
         app.logger.debug('Requested course: %s', course_id)
 
         # Find assignments which are aligned to Outcomes

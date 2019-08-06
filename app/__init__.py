@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from config import Config
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+from flask_bootstrap import Bootstrap
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -25,6 +26,7 @@ db = SQLAlchemy(app)
 login = LoginManager(app)
 login.login_view = 'index'
 migrate = Migrate(app, db)
-# toolbar = DebugToolbarExtension(app)
+toolbar = DebugToolbarExtension(app)
+bootstrap = Bootstrap(app)
 
 from app import routes, models

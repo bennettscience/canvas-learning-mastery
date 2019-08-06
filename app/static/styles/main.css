@@ -319,7 +319,7 @@ tr:not(:first-child):hover {
   background-color: rgba(0, 255, 0, 0.25);
 }
 
-[data-name] {
+/* [data-name] {
   position: relative;
   z-index: 2;
   cursor: pointer;
@@ -350,7 +350,6 @@ tr:not(:first-child):hover {
   pointer-events: none;
 }
 
-/* Show tooltip content on hover */
 [data-name]:hover:before,
 [data-name]:hover:after {
   visibility: visible;
@@ -377,4 +376,4 @@ tr:not(:first-child):hover {
   text-align: center;
   font-size: 14px;
   line-height: 1.2;
-}
+} */

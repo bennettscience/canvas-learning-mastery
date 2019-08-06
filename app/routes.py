@@ -214,7 +214,7 @@ def dashboard():
     app.logger.info('The Canvas user is %s', user.canvas_id)
 
     # Need to specify total students in the API call.
-    all_courses = canvas.get_courses(state=['available'], include='total_students')
+    all_courses = canvas.get_courses(state=['available'], enrollment_state=['active'], include='total_students')
 
     # Instantiate a list to hold pared down course objects for display
     courses = []
@@ -250,7 +250,10 @@ def course(course_id):
     canvas = init_canvas(session['oauth_token'])
 
     # Get the assignment groups from Canvas
-    query = canvas.get_course(course_id).get_assignment_groups()
+    current_course = canvas.get_course(course_id)
+    sections = current_course.get_sections()
+    
+    query = current_course.get_assignment_groups()
 
     # Populate assignment_group_ids into the Outcomes fetch form dynamically
     form = StoreOutcomesForm(request.values, id=course_id)
@@ -259,15 +262,6 @@ def course(course_id):
     app.logger.debug('Setting form assignment groups to: %s',
                      assignment_groups)
     form.assignment_groups.choices = assignment_groups
-
-    # Look up any existing Outcomes by course ID
-    outcomes = Outcome.query.filter(Outcome.course_id == course_id)
-
-    if not outcomes:
-        app.logger.debug('No outcomes, returning None')
-        outcomes = None
-
-    app.logger.info('Checking for assignments...')
 
     # Look only in the current course
     assignments = Assignment.query.filter_by(course_id=course_id)
@@ -281,14 +275,46 @@ def course(course_id):
         app.logger.info('Found assignments, getting scores')
         scores = Assignments.get_all_assignment_scores(canvas, course_id)
 
+    # Look up any existing Outcomes by course ID
+    outcomes = Outcome.query.filter(Outcome.course_id == course_id)
+
+    if not outcomes:
+        app.logger.debug('No outcomes, returning None')
+        outcomes = None
+
+    app.logger.info('Checking for assignments...')
+
     return render_template('course.html',
                            title='Canvas course',
                            outcomes=outcomes,
                            scores=scores,
                            assignments=assignments,
+                           sections=sections,
                            form=form
                            )
 
+@app.route('/section', methods=['POST'])
+def section():
+    data = request.json
+
+    canvas = init_canvas(session['oauth_token'])
+
+    # active_section = canvas.get_course(data['course_id']).get_section(data['section_id'])
+
+    # Look only in the current course
+    assignments = Assignment.query.filter_by(course_id=data['course_id'])
+    app.logger.info('Assignments: %s', assignments)
+
+    if not assignments:
+        app.logger.info('No assingments found for this course')
+        assignments = []
+        scores = []
+    else:
+        app.logger.info('Found assignments, getting scores')
+        scores = Assignments.get_all_assignment_scores(canvas, data['course_id'], section_id=data['section_id'])
+
+    return jsonify(scores)
+    # return jsonify({"assignments": assignments, "scores": scores})
 
 @app.route('/save', methods=['POST'])
 def save_outcomes():

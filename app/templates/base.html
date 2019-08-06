@@ -26,6 +26,60 @@
     {% block content %} {% endblock %} {% block scripts %}
     </div>
     <script type="text/javascript">
+      var changeSection = function(e) {
+        var elem = e;
+        var sectionId = e.target.value;
+        var re = /(course)\/(\d+)/gi;
+        var url = window.location.href;
+        var courseId = re.exec(url)[2];
+
+        console.log(courseId, sectionId)
+
+        $.ajax({
+          type: "POST",
+          url: "/section",
+          data: JSON.stringify({
+            course_id: courseId,
+            section_id: sectionId,
+          }),
+          contentType: "application/json;charset=UTF-8",
+          success: function(resp) {
+            console.log(resp)
+            var container = document.querySelector("#student-table")
+
+            if(resp) {
+              resp.forEach((el) => {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-name', el['user_name']);
+                var name = document.createElement('td');
+                name.innerText = `${el['user_name']}`;
+                tr.appendChild(name);
+  
+                el['submissions'].forEach((item) => {
+                  var td = document.createElement('td');
+                  td.setAttribute('data-outcome', item['outcome_id'])
+                  td.innerText = `${item['assignment_score']}`;
+                  if(!item['assignment_score']) {
+                    td.innerText = '0'
+                  }
+                  tr.appendChild(td);
+                })
+                container.appendChild(tr);
+              })
+            } else {
+              let row = document.createElement('tr');
+              let msg = document.createElement('td');
+
+              msg.innerText = 'No students or assignments found. Are you in an active course?';
+              row.appendChild(msg);
+              container.appendChild(row);
+            }
+          }
+        })
+      }
+    </script>
+    
+    <script type="text/javascript">
       var changeHandler = function(e) {
         var elem = e;
         var assignmentId = e.target.value;
@@ -64,47 +118,47 @@
         });
       };
 
-      clickHandler = function(e) {
-        console.log(e.target);
-        var studentId = $(e.target)
-          .closest("tr")
-          .attr("id");
-        var re = /(course)\/(\d+)/gi;
-        var url = window.location.href;
-        courseId = re.exec(url);
-        console.log(courseId[2]);
-        $.ajax({
-          type: "POST",
-          url: "/outcomes",
-          data: JSON.stringify({
-            student_id: studentId,
-            course_id: courseId[2]
-          }),
-          contentType: "application/json;charset=UTF-8",
-          success: function(resp) {
-            var studentId = resp.success.student_id;
-            var array = resp.success.data;
-            console.log(array);
-            $(`#${studentId}`)
-              .children("td")
-              .each(function(i, el) {
-                array.filter(function(item) {
-                  if ($(el).attr("data-outcome") == item.outcome_id) {
-                    console.log("matched outcome");
-                    if ($(el).text() == 1 && item.outcome_score < 3) {
-                      $(el).addClass("lower");
-                    } else if ($(el).text() == 0 && item.outcome_score > 3) {
-                      $(el).addClass("higher");
-                    }
-                  }
-                });
-              });
-          },
-          failure: function(resp) {
-            console.error(resp);
-          }
-        });
-      };
+      // clickHandler = function(e) {
+      //   console.log(e.target);
+      //   var studentId = $(e.target)
+      //     .closest("tr")
+      //     .attr("id");
+      //   var re = /(course)\/(\d+)/gi;
+      //   var url = window.location.href;
+      //   courseId = re.exec(url);
+      //   console.log(courseId[2]);
+      //   $.ajax({
+      //     type: "POST",
+      //     url: "/outcomes",
+      //     data: JSON.stringify({
+      //       student_id: studentId,
+      //       course_id: courseId[2]
+      //     }),
+      //     contentType: "application/json;charset=UTF-8",
+      //     success: function(resp) {
+      //       var studentId = resp.success.student_id;
+      //       var array = resp.success.data;
+      //       console.log(array);
+      //       $(`#${studentId}`)
+      //         .children("td")
+      //         .each(function(i, el) {
+      //           array.filter(function(item) {
+      //             if ($(el).attr("data-outcome") == item.outcome_id) {
+      //               console.log("matched outcome");
+      //               if ($(el).text() == 1 && item.outcome_score < 3) {
+      //                 $(el).addClass("lower");
+      //               } else if ($(el).text() == 0 && item.outcome_score > 3) {
+      //                 $(el).addClass("higher");
+      //               }
+      //             }
+      //           });
+      //         });
+      //     },
+      //     failure: function(resp) {
+      //       console.error(resp);
+      //     }
+      //   });
+      // };
 
       processTable = function() {
         var arr = new Array();
@@ -159,9 +213,11 @@
         .getElementById("alignment-table")
         .addEventListener("change", changeHandler, false);
 
-      document
-        .getElementById("student-table")
-        .addEventListener("click", clickHandler, false);
+      // document
+      //   .getElementById("student-table")
+      //   .addEventListener("click", clickHandler, false);
+
+      document.getElementById("section").addEventListener("change", changeSection, false);
 
       $(document).ajaxStart(function() {
         console.log("started ajax");

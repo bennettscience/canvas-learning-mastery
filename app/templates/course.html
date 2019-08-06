@@ -2,7 +2,7 @@
 <div id="alignmnets">
   <h1>Alignments</h1>
   <p>Select the Canvas Assignment group you want to align Outcomes to:</p>
-  <form class="" action="canvaslti/save" method="post">
+  <form class="" action="/save" method="post">
     <p>{{ form.id }}</p>
     <p class="form-select">{{ form.assignment_groups}}</p>
     <p>{{ form.submit() }}</p>
@@ -37,7 +37,7 @@
     </tr>
   </table>
 </div>
-{% if scores is not none %}
+
 <div class="scores">
   <div class="loader-wrap">
     <div class="message">
@@ -106,30 +106,31 @@
     </circle>
   </svg>
   </div>
+  <div class="section-select form-select">
+    <select id="section" class="" name="">
+      <option value="">Select section</option>
+      {% for s in sections %}
+      <option value="{{s['id']}}">{{s['name']}}</option>
+      {% endfor %}
+    </select>
+  </div>
   <div class="table-wrap">
   <table id="student-table">
+    {% if scores %}
     <thead>
       <th>
         <div style="width: 150px">Student</div>
+        {% for item in scores[0]['submissions'] %}
+        <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
+        {% endfor %}
       </th>
-      {% for item in scores[0]['submissions'] %}
-      <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
-      {% endfor %}
     </thead>
-    {% for item in scores %}
-    <tr id="{{item['canvas_id']}}" class="row">
-      <td data-name="{{item['user_name']}}">{{item['sis_id']}}</td>
-      {% for sub in item['submissions'] %}
-      <td data-outcome="{{sub['outcome_id']}}" class="">
-        {{sub['outcome_score']}}{{sub['assignment_score']}}
-      </td>
-      {% endfor %}
-    </tr>
-    {% endfor %}
+    {% endif %}
+    
   </table>
   </div>
   <button id="update-scores" onclick="processTable()">Update Scores</button>
 </div>
-{% endif %}
+
 
 {% endblock %}
