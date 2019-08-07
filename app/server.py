@@ -217,41 +217,43 @@ class Assignments:
 
             # Request the submissions from Canvas sorted by user
             submissions = course.get_multiple_submissions( \
-                assignment_ids=assignment_list, student_ids='all', include=('user', 'assignment'), grouped=1)
+                assignment_ids=assignment_list, student_ids='all', include=('user', 'assignment'), grouped=True)
 
             # Process the Submissions into usable JSON objects
-            for sub in submissions:
-                item = json.loads(sub.to_json())
-                # app.logger.debug('Item JSON created')
+            for submission_group in submissions:
 
-                if item['submissions']:
-                    if item['user_id'] in student_list:
-                        canvas_id = item['user_id']
-                        sis_id = item['submissions'][0]['user']['login_id']
-                        user_name = item['submissions'][0]['user']['name']
-                        submissions = []
+                submissions = []
+                
+                for sub in submission_group.submissions:
+                    
+                    item = json.loads(sub.to_json())
 
-                        for assignment in item['submissions']:
-                            assignment_score = assignment['grade']
-                            assignment_id = assignment['assignment']['id']
-                            assignment_name = assignment['assignment']['name']
+                    if item['user']['id'] in student_list:
+                        canvas_id = item['user']['id']
+                        sis_id = item['user']['login_id']
+                        user_name = item['user']['name']
+                        
 
-                            outcome_id = [int(val['outcome_id']) for val in outcome_list if val['id'] == assignment_id]
+                        assignment_score = item['grade']
+                        assignment_id = item['assignment_id']
+                        assignment_name = item['assignment']['name']
 
-                            submissions.append({
-                                'assignment_id': assignment_id,
-                                'assignment_name': assignment_name,
-                                'assignment_score': assignment_score,
-                                'outcome_id': int(outcome_id[0])
-                            })
+                        outcome_id = [int(val['outcome_id']) for val in outcome_list if val['id'] == assignment_id]
 
-                        json_data.append({
-                            'canvas_id': canvas_id,
-                            'sis_id': sis_id,
-                            'user_name': user_name,
-                            'submissions': submissions,
+                        submissions.append({
+                            'assignment_id': assignment_id,
+                            'assignment_name': assignment_name,
+                            'assignment_score': assignment_score,
+                            'outcome_id': int(outcome_id[0])
                         })
+
+                json_data.append({
+                    'canvas_id': canvas_id,
+                    'sis_id': sis_id,
+                    'user_name': user_name,
+                    'submissions': submissions,
+                })
         else:
             return None
-
+            
         return json_data
