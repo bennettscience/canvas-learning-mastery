@@ -245,7 +245,7 @@ button:hover {
 input[type=submit] {
   display: block;
   height: 48px;
-  width: 160px;
+  width: auto;
   font-size: 14px;
   background-color: rgb(27, 150, 2);
   text-transform: uppercase;

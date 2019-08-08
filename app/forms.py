@@ -12,7 +12,7 @@ class LoginForm(FlaskForm):
 class StoreOutcomesForm(FlaskForm):
     id = HiddenField('course_id')
     assignment_groups = SelectField('Assignment Group', coerce=int, choices=[])
-    submit = SubmitField('Get Outcomes')
+    submit = SubmitField('Import Assignments')
 
 class SelectSectionForm(FlaskForm):
     id = HiddenField('course_id')
