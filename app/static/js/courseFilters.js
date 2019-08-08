@@ -22,11 +22,12 @@ const changeSection = function(e) {
 
             if(resp) {
                 resp.forEach((el) => {
-                var tr = document.createElement('tr');
-                tr.setAttribute('data-name', el['user_name']);
-                var name = document.createElement('td');
-                name.innerText = `${el['user_name']}`;
-                tr.appendChild(name);
+                    var tr = document.createElement('tr');
+                    tr.setAttribute('id', el['canvas_id']);
+                    tr.setAttribute('class', 'trow');
+                    var name = document.createElement('td');
+                    name.innerText = `${el['user_name']}`;
+                    tr.appendChild(name);
 
                 el['submissions'].forEach((item) => {
                     var td = document.createElement('td');
@@ -97,27 +98,32 @@ const processTable = function() {
     var arr = new Array();
     var re = /(course)\/(\d+)/gi;
     var courseId = re.exec(window.location.href)[2];
-   
-    console.log("Course ID: ", courseId);
+    var outcomeId = new Array();
 
-    $("tr.row").each(function(i, el) {
+    // Collect specific outcome IDs
+    // https://community.canvaslms.com/thread/36750
+    $('th.th-outcome').each(function(i, el) {
+        var head = $(el);
+        outcomeId.push(head.data("outcome"));
+    })
+
+    $("tr.trow").each(function(i, el) {
         var row = $(el);
         var studentId = row.attr("id");
         arr.push(studentId);
     });
-
-    console.log(arr)
 
     $.ajax({
         type: "POST",
         url: "/outcomes",
         data: JSON.stringify({
         student_id_list: arr,
-        course_id: courseId
+        course_id: courseId,
+        outcome_id_list: outcomeId
         }),
         contentType: "application/json",
         success: function(resp) {
-        // console.log(resp);
+            console.log(resp);
             for (var i = 0; i < resp.success.length; i++) {
                 var student = resp.success[i];
 
