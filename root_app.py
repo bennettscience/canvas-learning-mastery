@@ -1,4 +1,5 @@
-import json, requests
+import json
+import requests
 from app import app, db
 from app.models import Outcome, Assignment, User
 from app.server import Outcomes, Assignments
