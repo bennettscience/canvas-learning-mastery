@@ -134,7 +134,7 @@
         <th>
           <div style="width: 150px">Student</div>
           {% for item in scores[0]['submissions'] %}
-          <th data-outcome="{{item['outcome_id']}}">{{item['assignment_name']}}</th>
+          <th data-outcome="{{item['outcome_id']}}" class="th-outcome">{{item['assignment_name']}}</th>
           {% endfor %}
         </th>
       </thead>
