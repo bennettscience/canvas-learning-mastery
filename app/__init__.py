@@ -17,7 +17,7 @@ file_handler = logging.handlers.RotatingFileHandler('logs/canvasdoc.log', mode='
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
 ))
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 app.config.from_object(Config)
