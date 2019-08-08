@@ -1,9 +1,10 @@
 import json, pprint
+import pdb
 import multiprocessing as mp
 from functools import partial
-from app import app, db, logging
-from app.models import Outcome, Assignment, User
-from flask_login import current_user
+from app import app, db
+from app.models import Outcome, Assignment
+# from flask_login import current_user
 
 class Outcomes:
 
@@ -63,7 +64,7 @@ class Outcomes:
         return data
 
     @staticmethod
-    def process_submissions(student_id, course):
+    def process_submissions(student_id, course, outcome_ids):
 
         """ Process student Outcome and Assignment scores
         :type student_id: Int
@@ -77,6 +78,7 @@ class Outcomes:
         :rtype: {Object} obj
         """    
         app.logger.debug("Processing %s", student_id)
+        app.logger.debug("Outcomes %s", outcome_ids)
 
         # Instantiate a dictionary
         obj = {}
@@ -85,27 +87,33 @@ class Outcomes:
 
         # Request all outcome rollups from Canvas
         rollups = course.get_outcome_result_rollups(
-            user_ids=student_id, aggregate="course", aggregate_stat="mean")
+            user_ids=student_id, aggregate="course", aggregate_stat="mean", outcome_ids=outcome_ids)
 
         # Limit to scores only
         raw_data = rollups['rollups'][0]['scores']
+
+        app.logger.debug(raw_data)
 
         # Run through each Outcome
         for outcome in raw_data:
             outcome_id = int(outcome['links']['outcome'])
             outcome_score = outcome['score']
 
+            app.logger.debug(outcome_id)
+
             # Find the matched assignment in the database
             query = Assignment.query.filter_by(outcome_id=outcome_id).first()
 
             if query is not None:
+                app.logger.debug(query.id)
+
                 assignment_id = query.id
 
                 # Get the assignment and submissions for the student
                 assignment = course.get_assignment(assignment_id)
                 submission = assignment.get_submission(student_id)
 
-                app.logger.info('Submission for %s: %s', assignment_id, submission.score)
+                app.logger.debug('Submission for %s: %s', assignment_id, submission.score)
 
                 # Instantiate an object for the current Outcome/Assignment pair
                 item = {'outcome_id': outcome_id,
@@ -127,11 +135,13 @@ class Outcomes:
 
                 # Store the item in the return object array
                 obj['outcomes'].append(item)
+            else:
+                pass
 
         return obj
 
     @classmethod
-    def update_student_scores(cls, canvas, course_id, student_ids):
+    def update_student_scores(cls, canvas, course_id, student_ids, outcome_ids):
 
         """ Description
         :type cls: Object
@@ -156,7 +166,7 @@ class Outcomes:
         course = canvas.get_course(course_id)
 
         # define args for the processing function
-        items = partial(cls.process_submissions, course=course)
+        items = partial(cls.process_submissions, course=course, outcome_ids=outcome_ids)
 
         # Post the list to the process function, wait for the results
         result = pool.map(items, student_ids)
@@ -232,7 +242,6 @@ class Assignments:
                         canvas_id = item['user']['id']
                         sis_id = item['user']['login_id']
                         user_name = item['user']['name']
-                        
 
                         assignment_score = item['grade']
                         assignment_id = item['assignment_id']
@@ -255,5 +264,5 @@ class Assignments:
                 })
         else:
             return None
-            
+
         return json_data
