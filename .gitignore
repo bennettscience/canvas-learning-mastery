@@ -8,3 +8,6 @@ classTest.py
 .vscode
 migrations/versions/__pycache__
 poolTest.py
+keysecret.txt
+lti.xml
+tmp/
