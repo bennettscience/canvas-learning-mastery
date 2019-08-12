@@ -19,7 +19,7 @@ file_handler = logging.handlers.RotatingFileHandler('tmp/logs/canvasdoc.log', mo
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
 ))
-file_handler.setLevel(logging.ERROR)
+file_handler.setLevel(logging.INFO)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -37,5 +37,6 @@ from app import routes, models
 sentry_sdk.init(
     dsn=app.config['SENTRY_DSN'],
     integrations=[FlaskIntegration()],
+    send_default_pii=True,
     release="canvas-mastery@0.1.1"
 )
