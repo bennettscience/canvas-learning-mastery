@@ -1,11 +1,18 @@
-const changeSection = function(e) {
-    var elem = e;
-    var sectionId = e.target.value;
+let sectionLoaded = false;
+
+const changeSection = function(sectionId) {
     var re = /(course)\/(\d+)/gi;
     var url = window.location.href;
     var courseId = re.exec(url)[2];
 
     console.log(courseId, sectionId)
+
+    // Set a reload action for the current ID
+    document.getElementById("sectionReload").setAttribute('data-section', sectionId);
+    let table = document.getElementById('student-table');
+
+    // Clear the inside of the table for a clean reload
+    table.innerHTML = "";
 
     $.ajax({
         type: "POST",
@@ -15,29 +22,74 @@ const changeSection = function(e) {
         section_id: sectionId,
         }),
         contentType: "application/json;charset=UTF-8",
-        success: function(resp) {
-            console.log(resp)
+        success: function(scores) {
+
+            // When the data comes back in enable the reload button
+            sectionLoaded = true;
+
+            if(sectionLoaded) {
+                $("#sectionReload").attr('disabled', false);
+            }
+
+            // If there are scores returned, rebuild the table
+            if(scores) {
+
+                // Start with the table header
+                let thead = document.createElement('thead');
+                let row = document.createElement('tr');
+                thead.appendChild(row);
+                table.appendChild(thead)
+
+                // Grab the header to append column headings
+                var header = document.querySelector('#student-table > thead > tr')
+                header.appendChild(document.createElement('th'));
+                header.firstElementChild.innerText = "Student";
+
+                // Loop through the first submission object to get the Assignment titles
+                // This is hacky, but it works.
+                scores[0]['submissions'].forEach((assignment) => {
+                    var th = document.createElement('th');
+                    th.setAttribute('data-outcome', assignment['outcome_id']);
+                    th.setAttribute('class', 'th-outcome');
+                    th.innerText = assignment['assignment_name'];
+                    header.appendChild(th);
+                })
+            }
             
+            // Now, build the body of the table
+            table.appendChild(document.createElement('tbody'))
+
+            // Grab the body in a var
             let container = document.querySelector("#student-table > tbody")
 
-            if(resp) {
-                resp.forEach((el) => {
+            // Look for those scores again
+            // Append each score to the table
+            if(scores) {
+                scores.forEach((el) => {
                     var tr = document.createElement('tr');
+
+                    // Set the variable of each row == student[canvas_id]
+                    // This makes processing the table easier
                     tr.setAttribute('id', el['canvas_id']);
                     tr.setAttribute('class', 'trow');
                     var name = document.createElement('td');
                     name.innerText = `${el['user_name']}`;
                     tr.appendChild(name);
 
-                el['submissions'].forEach((item) => {
-                    var td = document.createElement('td');
-                    td.setAttribute('data-outcome', item['outcome_id'])
-                    td.innerText = `${item['assignment_score']}`;
-                    if(!item['assignment_score']) {
-                    td.innerText = '0'
-                    }
-                    tr.appendChild(td);
-                })
+                    // Loop through the submissions array for each student
+                    el['submissions'].forEach((item) => {
+                        var td = document.createElement('td');
+                        td.setAttribute('data-outcome', item['outcome_id'])
+                        td.innerText = `${item['assignment_score']}`;
+                        if(!item['assignment_score']) {
+                            td.innerText = '0'
+                        }
+
+                        // Append the cell to the row
+                        tr.appendChild(td);
+                    })
+
+                // Add that row to the table
                 container.appendChild(tr);
             })
         } else {
@@ -54,6 +106,12 @@ const changeSection = function(e) {
 
 const changeHandler = function(e) {
     var elem = e;
+
+    // if(!sectionLoaded) {
+    //     $("#sectionReload").css('display', 'none');
+    // } else {
+    //     $("#sectionReload").css('display', 'block');
+    // }
     
     var assignmentId = e.target.value;
     var outcomeId = $(e.target)
@@ -85,7 +143,8 @@ const changeHandler = function(e) {
                 },
                 2000
                 );
-            setTimeout(location.reload(true), 2200);
+            
+            // setTimeout(location.reload(true), 2200);
         },
         failure: function(resp) {
             console.error(resp);
@@ -151,7 +210,15 @@ const processTable = function() {
 
 // Set the event listeners
 document.getElementById("alignment-table").addEventListener("change", changeHandler, false);
-document.getElementById("section").addEventListener("change", changeSection, false);
+document.getElementById("section").addEventListener("change", function(e) {
+    var sectionId = e.target.value;
+    changeSection(sectionId);
+});
+
+$("#sectionReload").on('click', function(e) {
+    var sectionId = $(this).data('section');
+    changeSection(sectionId);
+})
 
 // Toggle the loader animation
 $(document).ajaxStart(function() {

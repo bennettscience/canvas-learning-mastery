@@ -90,6 +90,19 @@ nav a:hover {
   width: 100%;
 }
 
+#sectionReload {
+  vertical-align: middle;
+  height: auto;
+  font-size: 1.5em;
+  border: none;
+  background-color: transparent;
+}
+
+#sectionReload:hover {
+  transition:transform ease-in-out 0.5s;
+  transform:rotateZ(360deg);
+}
+
 .form-select {
   display: inline-block;
   position: relative;
@@ -99,7 +112,6 @@ nav a:hover {
   -webkit-user-select: none;
   user-select: none;
   background: #ffffff;
-  overflow: hidden;
   border: 1px solid #cbcbcb;
   border-radius: 3px;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(0, 0, 0, 0.07);
@@ -170,8 +182,11 @@ select::-ms-expand {
 }
 
 .table-wrap {
+  margin-top: 15px;
+  margin-bottom: 30px;
   height: 550px;
   overflow: auto;
+  background-color: #fff;
 }
 
 .scores {
@@ -214,7 +229,7 @@ select::-ms-expand {
   transform: translateY(-50%);
 }
 
-button {
+#update-scores {
   display: block;
   height: 48px;
   width: 160px;
@@ -231,14 +246,14 @@ button {
   transition: box-shadow 0.3s ease-in-out;
 }
 
-button::after {
+#update-scores::after {
   content: "✓";
   color: #efefef;
   margin-left: 5px;
   font-size: 16px;
 }
 
-button:hover {
+#update-scores:hover {
   box-shadow: 0 0 0 5px rgba(8, 228, 63, 0.6);
 }
 

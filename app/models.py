@@ -40,10 +40,15 @@ class Outcome(db.Model):
 
     def align(self, assignment):
         if self.is_aligned():
-            self.assignment.remove(self.assignment[0])
-            self.assignment.append(assignment)
-            db.session.commit()
-            return 'Updated alignment to {}'.format(assignment.title)
+
+            if(assignment is not None):
+                self.assignment.remove(self.assignment[0])
+                self.assignment.append(assignment)
+                db.session.commit()
+                return 'Updated alignment to {}'.format(assignment.title)
+            else:
+                self.assignment.remove(self.assignment[0])
+                db.session.commit()
         else:
             self.assignment.append(assignment)
             db.session.commit()
@@ -66,7 +71,7 @@ class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128))
     course_id = db.Column(db.Integer)
-    outcome_id = db.Column(db.Integer, db.ForeignKey('outcome.id'))
+    outcome_id = db.Column(db.Integer, db.ForeignKey('outcome.id'), nullable=True)
 
     outcome = db.relationship('Outcome', backref='assignment', passive_updates=False, uselist=False)
 

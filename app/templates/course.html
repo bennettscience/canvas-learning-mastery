@@ -43,7 +43,7 @@
             </select>
           </div>
         </td>
-        <td class="confirm">&#10003; - refreshing page...</td>
+        <td class="confirm">&#10003;</td>
         {% endfor %}
         {% endif %}
       </tr>
@@ -127,19 +127,15 @@
         {% endfor %}
       </select>
     </div>
+    <button id="sectionReload" disabled>&#8635;</button>
     <div class="table-wrap">
     <table id="student-table">
-      {% if scores %}
-      <thead>
+      <!-- <thead>
         <th>
           <div style="width: 150px">Student</div>
-          {% for item in scores[0]['submissions'] %}
-          <th data-outcome="{{item['outcome_id']}}" class="th-outcome">{{item['assignment_name']}}</th>
-          {% endfor %}
         </th>
       </thead>
-      {% endif %}
-      <tbody></tbody>
+      <tbody></tbody> -->
     </table>
     </div>
     <button id="update-scores" onclick="processTable()">Update Scores</button>
