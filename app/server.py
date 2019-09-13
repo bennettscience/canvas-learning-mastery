@@ -124,10 +124,13 @@ class Outcomes:
                     submission.score = 0
 
                 # Check the conditions and update the Canvas gradebook
-                if outcome['score'] >= 3 and submission.score == 0.0:
+                if outcome['score'] >= 3 and submission.score == 0:
                     item['assignment_score'] = 1
                     submission.edit(submission={'posted_grade': 1})
-                elif outcome['score'] < 3 and submission.score >= 1.0:
+                elif outcome['score'] < 3 and submission.score >= 1:
+                    item['assignment_score'] = 0
+                    submission.edit(submission={'posted_grade': 0})
+                elif outcome['score'] < 3 and submission.score == 0:
                     item['assignment_score'] = 0
                     submission.edit(submission={'posted_grade': 0})
                 else:
@@ -175,6 +178,8 @@ class Outcomes:
 
 class Assignments:
 
+    # Return an error if the assignment is forbidden
+    # include the assignment name
     @staticmethod
     def get_all_assignment_scores(canvas, course_id, **kwargs):
 

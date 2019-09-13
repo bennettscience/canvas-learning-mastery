@@ -5,8 +5,6 @@ const changeSection = function(sectionId) {
     var url = window.location.href;
     var courseId = re.exec(url)[2];
 
-    console.log(courseId, sectionId)
-
     // Set a reload action for the current ID
     document.getElementById("sectionReload").setAttribute('data-section', sectionId);
     let table = document.getElementById('student-table');
@@ -81,25 +79,36 @@ const changeSection = function(sectionId) {
                         var td = document.createElement('td');
                         td.setAttribute('data-outcome', item['outcome_id'])
                         td.innerText = `${item['assignment_score']}`;
+                        
+                        // Display the dash instead of zero if there is no score
                         if(!item['assignment_score']) {
-                            td.innerText = '0'
+                            td.innerText = '-'
                         }
 
                         // Append the cell to the row
                         tr.appendChild(td);
                     })
 
-                // Add that row to the table
-                container.appendChild(tr);
-            })
-        } else {
+                    // Add that row to the table
+                    container.appendChild(tr);
+                })
+            } else {
+                let row = document.createElement('tr');
+                let msg = document.createElement('td');
+    
+                msg.innerText = 'Please align an outcome in the Alignments tab';
+                row.appendChild(msg);
+                container.appendChild(row);
+            }
+        }, error: function(request, status, message) {
+            let container = document.querySelector(".msg");
+            console.log(request.responseJSON.message);
             let row = document.createElement('tr');
             let msg = document.createElement('td');
 
-            msg.innerText = 'Please set an outcome in the Alignments tab';
+            msg.innerText = request.responseJSON.message;
             row.appendChild(msg);
             container.appendChild(row);
-        }
         }
     })
 }
