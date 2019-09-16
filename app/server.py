@@ -1,5 +1,4 @@
 import json, pprint
-import pdb
 import multiprocessing as mp
 from functools import partial
 from app import app, db
@@ -206,7 +205,7 @@ class Assignments:
         if 'section_id' in kwargs:
             course = course.get_section(kwargs.get('section_id'))
 
-        app.logger.debug('Requested course: %s', course_id)
+        # app.logger.debug('Requested course: %s', course_id)
 
         # Find assignments which are aligned to Outcomes
         query = Assignment.query.filter(Assignment.course_id == course_id, Assignment.outcome_id != None)
@@ -220,7 +219,8 @@ class Assignments:
                 # Store assignment IDs to pass to Canvas
                 assignment_list.append(item.id)
 
-            app.logger.debug('Assignments: %s', assignment_list)
+            # app.logger.debug('Assignments: %s', assignment_list)
+            # app.logger.debug('Outcomes: %s', outcome_list)
 
             # get active students to request submissions for
             enrollments = course.get_enrollments(role='StudentEnrollment')
@@ -228,10 +228,10 @@ class Assignments:
                 item = json.loads(e.to_json())
                 student_list.append(item['user']['id'])
 
-            app.logger.debug('Requested student list: %s', student_list)
+            # app.logger.debug('Requested student list: %s', student_list)
 
             # Request the submissions from Canvas sorted by user
-            submissions = course.get_multiple_submissions( \
+            submissions = course.get_multiple_submissions( 
                 assignment_ids=assignment_list, student_ids='all', include=('user', 'assignment'), grouped=True)
 
             # Process the Submissions into usable JSON objects
@@ -243,7 +243,12 @@ class Assignments:
                     
                     item = json.loads(sub.to_json())
 
+                    # app.logger.debug('Processing %s', item['user']['name'])
+
+                    # app.logger.debug(pprint.pprint(item['user']))
+
                     if item['user']['id'] in student_list:
+                        # app.logger.debug('Found ' + item['user']['name'] + ' in the list.')
                         canvas_id = item['user']['id']
                         sis_id = item['user']['login_id']
                         user_name = item['user']['name']
@@ -252,22 +257,35 @@ class Assignments:
                         assignment_id = item['assignment_id']
                         assignment_name = item['assignment']['name']
 
+                        # Get the outcome ID if it matches the assignment ID
                         outcome_id = [int(val['outcome_id']) for val in outcome_list if val['id'] == assignment_id]
 
-                        submissions.append({
+                        # TODO: Log who you're appending here. Find that double.
+                        # app.logger.debug('Appending submissions for %s', item['user']['name'])
+                        submission = {
                             'assignment_id': assignment_id,
                             'assignment_name': assignment_name,
                             'assignment_score': assignment_score,
-                            'outcome_id': int(outcome_id[0])
-                        })
+                            'outcome_id': int(outcome_id[0]),
+                        }
+                        submissions.append(submission)
+                
+                # app.logger.debug(pprint.pprint(submissions))
+                    else:
+                        # app.logger.debug('%s is not in the student list', item['user']['name'])
+                        # Continue to the next student if the ID isn't present in the current list
+                        continue
 
-                json_data.append({
-                    'canvas_id': canvas_id,
-                    'sis_id': sis_id,
-                    'user_name': user_name,
-                    'submissions': submissions,
-                })
+                    # app.logger.debug('Storing completed object for %s', item['user']['name'])
+                    json_data.append({
+                        'canvas_id': canvas_id,
+                        'sis_id': sis_id,
+                        'user_name': user_name,
+                        'submissions': submissions,
+                    })
+
         else:
             return None
-
+        
+        # app.logger.debug(pprint.pprint(json_data))
         return json_data
