@@ -1,8 +1,10 @@
 import json, pprint
+import canvasapi
 import multiprocessing as mp
 from functools import partial
 from app import app, db
 from app.models import Outcome, Assignment
+from werkzeug.exceptions import HTTPException
 # from flask_login import current_user
 
 class Outcomes:
@@ -174,6 +176,14 @@ class Outcomes:
         result = pool.map(items, student_ids)
 
         return result
+    
+    @classmethod
+    def get_student_rollups(cls, canvas, course_id, student_id):
+        
+        course = canvas.get_course(course_id)
+        
+        data = course.get_outcome_result_rollups(user_ids=student_id)
+        return data
 
 class Assignments:
 
