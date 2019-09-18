@@ -14,13 +14,13 @@ from flask_cors import CORS
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Init logging
-if not os.path.exists('tmp/logs'):
-    os.mkdir('tmp/logs')
-file_handler = logging.handlers.RotatingFileHandler('logs/canvasdoc.log', mode='a', maxBytes=10240, backupCount=5, encoding='utf-8')
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-))
-file_handler.setLevel(logging.INFO)
+# if not os.path.exists('tmp/logs'):
+#     os.mkdir('tmp/logs')
+# file_handler = logging.handlers.RotatingFileHandler('logs/canvasdoc.log', mode='a', maxBytes=10240, backupCount=5, encoding='utf-8')
+# file_handler.setFormatter(logging.Formatter(
+#     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+# ))
+# file_handler.setLevel(logging.INFO)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -37,9 +37,9 @@ CORS(app, resources={r"/student*": {"origins": "https://elkhart.instructure.com/
 from app import routes, models
 
 # Connect to Sentry
-# sentry_sdk.init(
-#     dsn=app.config['SENTRY_DSN'],
-#     integrations=[FlaskIntegration()],
-#     send_default_pii=True,
-#     release="canvas-mastery@0.1.5"
-# )
+sentry_sdk.init(
+    dsn=app.config['SENTRY_DSN'],
+    integrations=[FlaskIntegration()],
+    send_default_pii=True,
+    release="canvas-mastery@0.1.7"
+)
