@@ -202,7 +202,7 @@ class Assignments:
         :raises:
 
         :rtype: Object json_data
-        """    
+        """
         # make a couple lists to hold processed data
         assignment_list = []
         student_list = []
@@ -233,7 +233,7 @@ class Assignments:
             # app.logger.debug('Outcomes: %s', outcome_list)
 
             # get active students to request submissions for
-            enrollments = course.get_enrollments(role='StudentEnrollment')
+            enrollments = course.get_enrollments(role='StudentEnrollment', state='active')
             for e in enrollments:
                 item = json.loads(e.to_json())
                 student_list.append(item['user']['id'])
@@ -242,7 +242,7 @@ class Assignments:
 
             # Request the submissions from Canvas sorted by user
             submissions = course.get_multiple_submissions( 
-                assignment_ids=assignment_list, student_ids='all', include=('user', 'assignment'), grouped=True)
+                assignment_ids=assignment_list, student_ids=student_list, include=('user', 'assignment'), grouped=True)
 
             # Process the Submissions into usable JSON objects
             for submission_group in submissions:
@@ -258,7 +258,7 @@ class Assignments:
                     # app.logger.debug(pprint.pprint(item['user']))
 
                     if item['user']['id'] in student_list:
-                        # app.logger.debug('Found ' + item['user']['name'] + ' in the list.')
+                        app.logger.debug('Found ' + item['user']['name'] + ' in the list.')
                         canvas_id = item['user']['id']
                         sis_id = item['user']['login_id']
                         user_name = item['user']['name']
@@ -270,7 +270,6 @@ class Assignments:
                         # Get the outcome ID if it matches the assignment ID
                         outcome_id = [int(val['outcome_id']) for val in outcome_list if val['id'] == assignment_id]
 
-                        # TODO: Log who you're appending here. Find that double.
                         # app.logger.debug('Appending submissions for %s', item['user']['name'])
                         submission = {
                             'assignment_id': assignment_id,
@@ -286,13 +285,13 @@ class Assignments:
                         # Continue to the next student if the ID isn't present in the current list
                         continue
 
-                    # app.logger.debug('Storing completed object for %s', item['user']['name'])
-                    json_data.append({
-                        'canvas_id': canvas_id,
-                        'sis_id': sis_id,
-                        'user_name': user_name,
-                        'submissions': submissions,
-                    })
+                # app.logger.debug('Storing completed object for %s', item['user']['name'])
+                json_data.append({
+                    'canvas_id': canvas_id,
+                    'sis_id': sis_id,
+                    'user_name': user_name,
+                    'submissions': submissions,
+                })
 
         else:
             return None
