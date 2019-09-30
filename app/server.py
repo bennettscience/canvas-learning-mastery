@@ -125,13 +125,13 @@ class Outcomes:
                     submission.score = 0
 
                 # Check the conditions and update the Canvas gradebook
-                if outcome['score'] >= 2.8 and submission.score == 0:
+                if outcome['score'] >= 2.80 and submission.score == 0:
                     item['assignment_score'] = 1
                     submission.edit(submission={'posted_grade': 1})
-                elif outcome['score'] < 2.8 and submission.score >= 1:
+                elif outcome['score'] < 2.80 and submission.score >= 1:
                     item['assignment_score'] = 0
                     submission.edit(submission={'posted_grade': 0})
-                elif outcome['score'] < 2.8 and submission.score == 0:
+                elif outcome['score'] < 2.80 and submission.score == 0:
                     item['assignment_score'] = 0
                     submission.edit(submission={'posted_grade': 0})
                 else:
