@@ -385,16 +385,6 @@ def get_user_outcomes():
 
     return jsonify({'success': data})
 
-
-@app.route('/about', methods=['GET'])
-def about():
-    """ Description
-    :raises:
-
-    :rtype:
-    """
-    return render_template('about.html', title="About")
-
 @app.route('/student', methods=['GET'])
 def student():
     canvas = Canvas(app.config['OAUTH_CREDENTIALS']['canvas']['base_url'],
