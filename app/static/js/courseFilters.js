@@ -218,14 +218,14 @@ const processTable = function() {
 };
 
 // Set the event listeners
-document.getElementById("alignment-table").addEventListener("change", changeHandler, false);
-document.getElementById("section").addEventListener("change", function(e) {
+document.querySelector("#alignment-table").addEventListener("change", changeHandler, false);
+document.querySelector("#section").addEventListener("change", function(e) {
     var sectionId = e.target.value;
     changeSection(sectionId);
 });
 
-$("#sectionReload").on('click', function(e) {
-    var sectionId = $(this).data('section');
+document.querySelector("#sectionReload").addEventListener('click', function(e) {
+    var sectionId = this.dataset.section;
     changeSection(sectionId);
 })
 
