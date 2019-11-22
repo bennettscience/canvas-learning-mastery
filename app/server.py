@@ -302,6 +302,17 @@ class Assignments:
         return json_data
 
     @staticmethod
+    def get_course_assignments(canvas, course_id):
+
+        course = canvas.get_course(course_id)
+
+        assignments = list(course.get_assignments())
+
+        assignment_list = [{"id":assignment.id, "name":assignment.name} for assignment in assignments]
+
+        return assignment_list
+
+    @staticmethod
     def get_rubric_result_for_assignment(canvas, course_id, assignment_id):
 
         course = canvas.get_course(course_id)

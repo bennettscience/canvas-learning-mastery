@@ -1,13 +1,40 @@
 let sectionLoaded = false;
 
-const changeSection = function(sectionId) {
+const getCourseId = function() {
     var re = /(course)\/(\d+)/gi;
     var url = window.location.href;
     var courseId = re.exec(url)[2];
+    return courseId;
+}
+
+const getSectionAssignments = function(sectionId) {
+
+    const courseId = getCourseId();
+    const assignmentSelect = document.querySelector('#assignment-select');
+
+    $.ajax({
+        type: 'GET',
+        url: `../course/${courseId}/assignments`,
+        success: function(result) {
+            console.log(result)
+            for(var r=0; r<result.success.length; r++) {
+                console.log(`Processing ${result.success[r].name}`)
+                let option = document.createElement('option');
+                option.value = result.success[r].id;
+                option.innerText = result.success[r].name;
+                assignmentSelect.appendChild(option);
+            }
+        }
+    })
+}
+
+const changeSection = function(sectionId) {
+    
+    courseId = getCourseId();
 
     // Set a reload action for the current ID
-    document.getElementById("sectionReload").setAttribute('data-section', sectionId);
-    let table = document.getElementById('student-table');
+    document.querySelector("#sectionReload").setAttribute('data-section', sectionId);
+    let table = document.querySelector('#student-table');
 
     // Clear the inside of the table for a clean reload
     table.innerHTML = "";
@@ -163,9 +190,9 @@ const changeHandler = function(e) {
 
 
 const processTable = function() {
-    var arr = new Array();
-    var re = /(course)\/(\d+)/gi;
-    var courseId = re.exec(window.location.href)[2];
+    
+    var courseId = getCourseId();
+
     var outcomeId = new Array();
 
     // Collect specific outcome IDs
@@ -223,6 +250,11 @@ document.querySelector("#section").addEventListener("change", function(e) {
     var sectionId = e.target.value;
     changeSection(sectionId);
 });
+
+document.querySelector("#rubric-section").addEventListener("change", function(e) {
+    const sectionId = e.target.value;
+    getSectionAssignments(sectionId)
+})
 
 document.querySelector("#sectionReload").addEventListener('click', function(e) {
     var sectionId = this.dataset.section;

@@ -322,6 +322,15 @@ def section():
     return jsonify(scores)
     # return jsonify({"assignments": assignments, "scores": scores})
 
+@app.route('/course/<course_id>/assignments', methods=['GET'])
+def get_course_assignments(course_id):
+    
+    canvas = init_canvas(session['oauth_token'])
+
+    data = Assignments.get_course_assignments(canvas, course_id)
+    print(data)
+
+    return jsonify({"success": data})
 
 @app.route('/save', methods=['POST'])
 def save_outcomes():
@@ -402,6 +411,10 @@ def student():
         app.logger.debug(e)
         return json.dumps({'success': False}), 400, {'Content-Type': 'application/json'}
         # raise BadRequest('Outcomes cannot be requested for teachers', 400, payload=e)
+
+@app.route('/rubric/<section_id>/<assignment_id>', methods=["GET"])
+def rubric(section_id, assignment_id):
+    return {"msg": f'Received {section_id} and {assignment_id}'}
 
 @app.errorhandler(500)
 def server_error_handler(error):
