@@ -187,6 +187,7 @@ class Outcomes:
         data = course.get_outcome_result_rollups(user_ids=student_id)
         return data
 
+
 class Assignments:
 
     # Return an error if the assignment is forbidden
@@ -263,7 +264,7 @@ class Assignments:
                         app.logger.debug('Found ' + item['user']['name'] + ' in the list.')
                         canvas_id = item['user']['id']
                         sis_id = item['user']['login_id']
-                        user_name = item['user']['name']
+                        user_name = item['user']['sortable_name']
 
                         assignment_score = item['grade']
                         assignment_id = item['assignment_id']
@@ -308,12 +309,13 @@ class Assignments:
 
         assignments = list(course.get_assignments())
 
-        assignment_list = [{"id":assignment.id, "name":assignment.name} for assignment in assignments]
-
+        # This works without the boolean
+        assignment_list = [{"id": assignment.id, "name": assignment.name} for assignment in assignments]
+        
         return assignment_list
 
     @staticmethod
-    def get_rubric_result_for_assignment(canvas, course_id, assignment_id):
+    def get_assignment_rubric_results(canvas, course_id, assignment_id):
 
         course = canvas.get_course(course_id)
 
@@ -334,18 +336,21 @@ class Assignments:
             columns.append(column)
 
         # Get submissions for the assignment to get rubric evals
-        submissions = assignment.get_submissions(include='rubric_assessment')
+        submissions = assignment.get_submissions(include=('rubric_assessment', 'user'))
 
         # Create a list to store all results
         student_results = list()
 
         for submission in list(submissions):
-            # pprint(submission)
+
             student_result = {}
             student_result['id'] = submission.user_id
+            student_result['name'] = submission.user['sortable_name']
             student_result['score'] = submission.score
             if hasattr(submission, 'rubric_assessment'):
                 student_result['rubric'] = submission.rubric_assessment
             student_results.append(student_result)
 
-        return student_results
+        student_results = sorted(student_results, key=lambda x: x['name'].split(" "))
+
+        return {"columns": columns, "studentResults": student_results}
