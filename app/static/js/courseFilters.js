@@ -10,15 +10,14 @@ const getCourseId = function() {
 const getSectionAssignments = function(sectionId) {
 
     const courseId = getCourseId();
-    const assignmentSelect = document.querySelector('#assignment-select');
+    const assignmentSelect = document.querySelector('#rubric-assignment-select');
 
     $.ajax({
         type: 'GET',
         url: `../course/${courseId}/assignments`,
         success: function(result) {
-            console.log(result)
+
             for(var r=0; r<result.success.length; r++) {
-                console.log(`Processing ${result.success[r].name}`)
                 let option = document.createElement('option');
                 option.value = result.success[r].id;
                 option.innerText = result.success[r].name;
@@ -26,6 +25,80 @@ const getSectionAssignments = function(sectionId) {
             }
         }
     })
+}
+
+const getAssignmentRubrics = function(courseId, assignmentId) {
+
+    $.ajax({
+        type: 'GET',
+        url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
+        success: function(result) {
+
+            const table = document.querySelector('#student-rubric-table');
+            table.innerHTML = ''; // Empty the table
+
+            let thead = document.createElement('thead');
+            let row = document.createElement('tr');
+
+            thead.appendChild(row);
+        
+            table.appendChild(thead);
+        
+            let header = document.querySelector('#student-rubric-table > thead > tr')
+            header.appendChild(document.createElement('th'));
+            header.firstElementChild.innerText = "Student";
+            header.appendChild(document.createElement('th'));
+            header.lastElementChild.innerText = "Score";
+
+            result.columns.forEach(function(el) {
+                var th = document.createElement('th');
+                th.setAttribute('data-outcome', el['id']);
+                th.setAttribute('class', 'th-outcome');
+                th.innerText = el['name'];
+                header.appendChild(th);
+            })
+
+            table.appendChild(document.createElement('tbody'))
+
+            let container = document.querySelector('#student-rubric-table > tbody');
+
+            result.studentResults.forEach(function(student) {
+                // Set the variable of each row == student[canvas_id]
+                // This makes processing the table easier
+                let rubric = student.rubric;
+                let tr = document.createElement('tr');
+                tr.setAttribute('id', student['id']);
+                tr.setAttribute('class', 'trow');
+                var name = document.createElement('td');
+                var score = document.createElement('td');
+                name.innerText = `${student['name']}`;
+                score.innerText = `${student['score']}`
+                tr.appendChild(name);
+                tr.appendChild(score);
+
+                // Loop through the submissions array for each student
+                result.columns.forEach((item) => {
+                    var td = document.createElement('td');
+                    td.setAttribute('data-outcome', item['id'])
+                    if(student.rubric && rubric[item['id']]['points']) {
+                        td.innerText = `${rubric[item['id']]['points']}`;
+                    } else {
+                        td.innerText = ' - '
+                    }
+
+                    // Append the cell to the row
+                    tr.appendChild(td);
+                })
+
+                // Add that row to the table
+                container.appendChild(tr);
+            })
+        }
+    })
+    
+
+
+
 }
 
 const changeSection = function(sectionId) {
@@ -109,7 +182,7 @@ const changeSection = function(sectionId) {
                         
                         // Display the dash instead of zero if there is no score
                         if(!item['assignment_score']) {
-                            td.innerText = '-'
+                            td.innerText = '0'
                         }
 
                         // Append the cell to the row
@@ -254,6 +327,14 @@ document.querySelector("#section").addEventListener("change", function(e) {
 document.querySelector("#rubric-section").addEventListener("change", function(e) {
     const sectionId = e.target.value;
     getSectionAssignments(sectionId)
+})
+
+document.querySelector("#rubric-assignment-select").addEventListener("change", function(e) {
+    // const sectionId = document.querySelector("#rubric-section").value;
+    const courseId = getCourseId()
+    const assignmentId = e.target.value;
+
+    getAssignmentRubrics(courseId, assignmentId);
 })
 
 document.querySelector("#sectionReload").addEventListener('click', function(e) {

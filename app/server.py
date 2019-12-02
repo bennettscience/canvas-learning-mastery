@@ -2,6 +2,7 @@ from canvasapi import Canvas
 from pprint import pprint
 import json, pprint
 import canvasapi
+import re
 import multiprocessing as mp
 from functools import partial
 from app import app, db
@@ -310,11 +311,10 @@ class Assignments:
         assignments = list(course.get_assignments())
 
         # This works without the boolean
-        assignment_list = [{"id": assignment.id, "name": assignment.name} for assignment in assignments]
+        assignment_list = [{"id": assignment.id, "name": assignment.name} for assignment in assignments if hasattr(assignment, 'rubric')]
         
         return assignment_list
-
-    @staticmethod
+    
     def get_assignment_rubric_results(canvas, course_id, assignment_id):
 
         course = canvas.get_course(course_id)
