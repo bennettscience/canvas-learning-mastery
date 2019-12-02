@@ -31,5 +31,5 @@ sentry_sdk.init(
     dsn=app.config['SENTRY_DSN'],
     integrations=[FlaskIntegration()],
     send_default_pii=True,
-    release="canvas-mastery@0.1.8.1"
+    release="canvas-mastery@0.1.9"
 )
