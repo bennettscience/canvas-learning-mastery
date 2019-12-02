@@ -425,6 +425,12 @@ def student():
 def rubric(section_id, assignment_id):
     return {"msg": f'Received {section_id} and {assignment_id}'}
 
+# @app.errorhandler(500)
+# def server_error_handler(error):
+#     return render_template("500.html", sentry_event_id=last_event_id()), 500
+
+
 @app.errorhandler(500)
-def server_error_handler(error):
-    return render_template("500.html", sentry_event_id=last_event_id()), 500
+def internal_error(exception):
+    app.logger.error(exception)
+    return render_template('500.html'), 500
