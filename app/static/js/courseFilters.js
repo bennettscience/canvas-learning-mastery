@@ -1,13 +1,113 @@
 let sectionLoaded = false;
 
-const changeSection = function(sectionId) {
+const getCourseId = function() {
     var re = /(course)\/(\d+)/gi;
     var url = window.location.href;
     var courseId = re.exec(url)[2];
+    return courseId;
+}
+
+const getSectionAssignments = function(sectionId) {
+
+    const courseId = getCourseId();
+    const assignmentSelect = document.querySelector('#rubric-assignment-select');
+
+    $.ajax({
+        type: 'GET',
+        url: `../course/${courseId}/assignments`,
+        success: function(result) {
+
+            for(var r=0; r<result.success.length; r++) {
+                let option = document.createElement('option');
+                option.value = result.success[r].id;
+                option.innerText = result.success[r].name;
+                assignmentSelect.appendChild(option);
+            }
+        }
+    })
+}
+
+const getAssignmentRubrics = function(courseId, assignmentId) {
+
+    $.ajax({
+        type: 'GET',
+        url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
+        success: function(result) {
+
+            const table = document.querySelector('#student-rubric-table');
+            table.innerHTML = ''; // Empty the table
+
+            let thead = document.createElement('thead');
+            let row = document.createElement('tr');
+
+            thead.appendChild(row);
+        
+            table.appendChild(thead);
+        
+            let header = document.querySelector('#student-rubric-table > thead > tr')
+            header.appendChild(document.createElement('th'));
+            header.firstElementChild.innerText = "Student";
+            header.appendChild(document.createElement('th'));
+            header.lastElementChild.innerText = "Score";
+
+            result.columns.forEach(function(el) {
+                var th = document.createElement('th');
+                th.setAttribute('data-outcome', el['id']);
+                th.setAttribute('class', 'th-outcome');
+                th.innerText = el['name'];
+                header.appendChild(th);
+            })
+
+            table.appendChild(document.createElement('tbody'))
+
+            let container = document.querySelector('#student-rubric-table > tbody');
+
+            result.studentResults.forEach(function(student) {
+                // Set the variable of each row == student[canvas_id]
+                // This makes processing the table easier
+                let rubric = student.rubric;
+                let tr = document.createElement('tr');
+                tr.setAttribute('id', student['id']);
+                tr.setAttribute('class', 'trow');
+                var name = document.createElement('td');
+                var score = document.createElement('td');
+                name.innerText = `${student['name']}`;
+                score.innerText = `${student['score']}`
+                tr.appendChild(name);
+                tr.appendChild(score);
+
+                // Loop through the submissions array for each student
+                result.columns.forEach((item) => {
+                    var td = document.createElement('td');
+                    td.setAttribute('data-outcome', item['id'])
+                    if(student.rubric && rubric[item['id']]['points']) {
+                        td.innerText = `${rubric[item['id']]['points']}`;
+                    } else {
+                        td.innerText = ' - '
+                    }
+
+                    // Append the cell to the row
+                    tr.appendChild(td);
+                })
+
+                // Add that row to the table
+                container.appendChild(tr);
+            })
+        }
+    })
+    
+
+
+
+}
+
+const changeSection = function(sectionId) {
+    
+    courseId = getCourseId();
 
     // Set a reload action for the current ID
-    document.getElementById("sectionReload").setAttribute('data-section', sectionId);
-    let table = document.getElementById('student-table');
+    document.querySelector("#sectionReload").setAttribute('data-section', sectionId);
+    let table = document.querySelector('#student-table');
 
     // Clear the inside of the table for a clean reload
     table.innerHTML = "";
@@ -82,7 +182,7 @@ const changeSection = function(sectionId) {
                         
                         // Display the dash instead of zero if there is no score
                         if(!item['assignment_score']) {
-                            td.innerText = '-'
+                            td.innerText = '0'
                         }
 
                         // Append the cell to the row
@@ -163,9 +263,9 @@ const changeHandler = function(e) {
 
 
 const processTable = function() {
-    var arr = new Array();
-    var re = /(course)\/(\d+)/gi;
-    var courseId = re.exec(window.location.href)[2];
+    
+    var courseId = getCourseId();
+
     var outcomeId = new Array();
 
     // Collect specific outcome IDs
@@ -218,14 +318,27 @@ const processTable = function() {
 };
 
 // Set the event listeners
-document.getElementById("alignment-table").addEventListener("change", changeHandler, false);
-document.getElementById("section").addEventListener("change", function(e) {
+document.querySelector("#alignment-table").addEventListener("change", changeHandler, false);
+document.querySelector("#section").addEventListener("change", function(e) {
     var sectionId = e.target.value;
     changeSection(sectionId);
 });
 
-$("#sectionReload").on('click', function(e) {
-    var sectionId = $(this).data('section');
+document.querySelector("#rubric-section").addEventListener("change", function(e) {
+    const sectionId = e.target.value;
+    getSectionAssignments(sectionId)
+})
+
+document.querySelector("#rubric-assignment-select").addEventListener("change", function(e) {
+    // const sectionId = document.querySelector("#rubric-section").value;
+    const courseId = getCourseId()
+    const assignmentId = e.target.value;
+
+    getAssignmentRubrics(courseId, assignmentId);
+})
+
+document.querySelector("#sectionReload").addEventListener('click', function(e) {
+    var sectionId = this.dataset.section;
     changeSection(sectionId);
 })
 

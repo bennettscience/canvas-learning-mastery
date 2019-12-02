@@ -1,5 +1,8 @@
+from canvasapi import Canvas
+from pprint import pprint
 import json, pprint
 import canvasapi
+import re
 import multiprocessing as mp
 from functools import partial
 from app import app, db
@@ -185,6 +188,7 @@ class Outcomes:
         data = course.get_outcome_result_rollups(user_ids=student_id)
         return data
 
+
 class Assignments:
 
     # Return an error if the assignment is forbidden
@@ -261,7 +265,7 @@ class Assignments:
                         app.logger.debug('Found ' + item['user']['name'] + ' in the list.')
                         canvas_id = item['user']['id']
                         sis_id = item['user']['login_id']
-                        user_name = item['user']['name']
+                        user_name = item['user']['sortable_name']
 
                         assignment_score = item['grade']
                         assignment_id = item['assignment_id']
@@ -298,3 +302,55 @@ class Assignments:
         
         # app.logger.debug(pprint.pprint(json_data))
         return json_data
+
+    @staticmethod
+    def get_course_assignments(canvas, course_id):
+
+        course = canvas.get_course(course_id)
+
+        assignments = list(course.get_assignments())
+
+        # This works without the boolean
+        assignment_list = [{"id": assignment.id, "name": assignment.name} for assignment in assignments if hasattr(assignment, 'rubric')]
+        
+        return assignment_list
+    
+    def get_assignment_rubric_results(canvas, course_id, assignment_id):
+
+        course = canvas.get_course(course_id)
+
+        # Get an assignment by ID
+        assignment = course.get_assignment(assignment_id)
+
+        # Use the assignment to get a rubric ID for keys/ID
+        rubric = assignment.rubric
+
+        # build a list
+        columns = []
+
+        for criteria in rubric:
+            column = {}
+            column['id'] = criteria['id']
+            column['name'] = criteria['description']
+            column['outcome_id'] = criteria['outcome_id']
+            columns.append(column)
+
+        # Get submissions for the assignment to get rubric evals
+        submissions = assignment.get_submissions(include=('rubric_assessment', 'user'))
+
+        # Create a list to store all results
+        student_results = list()
+
+        for submission in list(submissions):
+
+            student_result = {}
+            student_result['id'] = submission.user_id
+            student_result['name'] = submission.user['sortable_name']
+            student_result['score'] = submission.score
+            if hasattr(submission, 'rubric_assessment'):
+                student_result['rubric'] = submission.rubric_assessment
+            student_results.append(student_result)
+
+        student_results = sorted(student_results, key=lambda x: x['name'].split(" "))
+
+        return {"columns": columns, "studentResults": student_results}
