@@ -26,14 +26,17 @@ class User(UserMixin, db.Model):
 def load_user(id):
     return User.query.get(id)
 
+
 class Outcome(db.Model):
     """ Outcome object
       id : unique int
       title : string name
-      score : binary 0 or 1
-      courses: list of courses the outcome is assessed in
+      outcome_id: matches Canvas outcome ID
+      course_id: course aligned with outcome
+      assignment_id: relationship to a single assignment
       """
     id = db.Column(db.Integer, primary_key=True)
+    outcome_id = db.Column(db.Integer)
     title = db.Column(db.String(64))
     course_id = db.Column(db.Integer)
     assignment_id = db.relationship('Assignment', uselist=False, back_populates='outcome')
