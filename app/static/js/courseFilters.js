@@ -191,38 +191,6 @@ const changeSection = function(sectionId) {
                     container.appendChild(tr);
                 });
 
-            // Look for those scores again
-            // Append each score to the table
-            // if(scores) {
-            //     scores.forEach((el) => {
-            //         var tr = document.createElement('tr');
-
-            //         // Set the variable of each row == student[canvas_id]
-            //         // This makes processing the table easier
-            //         tr.setAttribute('id', el['canvas_id']);
-            //         tr.setAttribute('class', 'trow');
-            //         var name = document.createElement('td');
-            //         name.innerText = `${el['user_name']}`;
-            //         tr.appendChild(name);
-
-            //         // Loop through the submissions array for each student
-            //         el['submissions'].forEach((item) => {
-            //             var td = document.createElement('td');
-            //             td.setAttribute('data-outcome', item['outcome_id'])
-            //             td.innerText = `${item['assignment_score']}`;
-                        
-            //             // Display the dash instead of zero if there is no score
-            //             if(!item['assignment_score']) {
-            //                 td.innerText = '0'
-            //             }
-
-            //             // Append the cell to the row
-            //             tr.appendChild(td);
-            //         })
-
-            //         // Add that row to the table
-            //         container.appendChild(tr);
-            //     })
             } else {
                 let row = document.createElement('tr');
                 let msg = document.createElement('td');
