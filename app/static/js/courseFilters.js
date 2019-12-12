@@ -33,7 +33,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
         type: 'GET',
         url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
         success: function(result) {
-
+            result = result.data;
             const table = document.querySelector('#student-rubric-table');
             table.innerHTML = ''; // Empty the table
 
@@ -50,6 +50,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
             header.appendChild(document.createElement('th'));
             header.lastElementChild.innerText = "Score";
 
+            // Add a header column in the table
             result.columns.forEach(function(el) {
                 var th = document.createElement('th');
                 th.setAttribute('data-outcome', el['id']);
@@ -78,6 +79,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
 
                 // Loop through the submissions array for each student
                 result.columns.forEach((item) => {
+                    console.log(rubric)
                     var td = document.createElement('td');
                     td.setAttribute('data-outcome', item['id'])
                     if(student.rubric && rubric[item['id']]['points']) {
@@ -131,7 +133,6 @@ const changeSection = function(sectionId) {
 
             // If there are scores returned, rebuild the table
             if(scores) {
-
                 // Start with the table header
                 let thead = document.createElement('thead');
                 let row = document.createElement('tr');
@@ -147,9 +148,10 @@ const changeSection = function(sectionId) {
                 // This is hacky, but it works.
                 scores[0]['submissions'].forEach((assignment) => {
                     var th = document.createElement('th');
-                    th.setAttribute('data-outcome', assignment['outcome_id']);
+                    var outcomeId = Object.keys(assignment)
+                    th.setAttribute('data-outcome', outcomeId);
                     th.setAttribute('class', 'th-outcome');
-                    th.innerText = assignment['assignment_name'];
+                    th.innerText = assignment[outcomeId]['assignment_name'];
                     header.appendChild(th);
                 })
             }
@@ -159,39 +161,68 @@ const changeSection = function(sectionId) {
 
             // Grab the body in a var
             let container = document.querySelector("#student-table > tbody")
+            let headers = document.querySelectorAll("#student-table > thead > tr > th");
+
+            if(scores) {
+                scores.forEach((student) => {
+                    var tr = document.createElement('tr');
+
+                    tr.setAttribute('id', student['canvas_id']);
+                    tr.setAttribute('class', 'trow');
+                    var name = document.createElement('td');
+                    name.innerText = `${student['user_name']}`;
+                    tr.appendChild(name);
+
+                    // Use the headers to index the submissions cells to
+                    // make sure the correct score is in the correct column.
+                    headers.forEach((header) => {
+                        if(header.dataset.outcome) {
+                            let submissions = student.submissions;
+                            let outcome = header.dataset.outcome;
+                            var td = document.createElement('td');
+                            td.setAttribute('data-outcome', outcome);
+                            var score = submissions.find(item => Object.keys(item) == outcome)
+                            score = (score[outcome]['assignment_score'] === null) ? `-` : score[outcome]['assignment_score'];
+                            td.innerText = score
+    
+                            tr.appendChild(td);
+                        }
+                    })
+                    container.appendChild(tr);
+                });
 
             // Look for those scores again
             // Append each score to the table
-            if(scores) {
-                scores.forEach((el) => {
-                    var tr = document.createElement('tr');
+            // if(scores) {
+            //     scores.forEach((el) => {
+            //         var tr = document.createElement('tr');
 
-                    // Set the variable of each row == student[canvas_id]
-                    // This makes processing the table easier
-                    tr.setAttribute('id', el['canvas_id']);
-                    tr.setAttribute('class', 'trow');
-                    var name = document.createElement('td');
-                    name.innerText = `${el['user_name']}`;
-                    tr.appendChild(name);
+            //         // Set the variable of each row == student[canvas_id]
+            //         // This makes processing the table easier
+            //         tr.setAttribute('id', el['canvas_id']);
+            //         tr.setAttribute('class', 'trow');
+            //         var name = document.createElement('td');
+            //         name.innerText = `${el['user_name']}`;
+            //         tr.appendChild(name);
 
-                    // Loop through the submissions array for each student
-                    el['submissions'].forEach((item) => {
-                        var td = document.createElement('td');
-                        td.setAttribute('data-outcome', item['outcome_id'])
-                        td.innerText = `${item['assignment_score']}`;
+            //         // Loop through the submissions array for each student
+            //         el['submissions'].forEach((item) => {
+            //             var td = document.createElement('td');
+            //             td.setAttribute('data-outcome', item['outcome_id'])
+            //             td.innerText = `${item['assignment_score']}`;
                         
-                        // Display the dash instead of zero if there is no score
-                        if(!item['assignment_score']) {
-                            td.innerText = '0'
-                        }
+            //             // Display the dash instead of zero if there is no score
+            //             if(!item['assignment_score']) {
+            //                 td.innerText = '0'
+            //             }
 
-                        // Append the cell to the row
-                        tr.appendChild(td);
-                    })
+            //             // Append the cell to the row
+            //             tr.appendChild(td);
+            //         })
 
-                    // Add that row to the table
-                    container.appendChild(tr);
-                })
+            //         // Add that row to the table
+            //         container.appendChild(tr);
+            //     })
             } else {
                 let row = document.createElement('tr');
                 let msg = document.createElement('td');
@@ -221,7 +252,8 @@ const changeHandler = function(e) {
     // } else {
     //     $("#sectionReload").css('display', 'block');
     // }
-    
+
+    var courseId = getCourseId();
     var assignmentId = e.target.value;
     var outcomeId = $(e.target)
         .closest("tr")
@@ -232,7 +264,8 @@ const changeHandler = function(e) {
             url: "/align",
             data: JSON.stringify({
             assignment_id: assignmentId,
-            outcome_id: outcomeId
+            outcome_id: outcomeId,
+            course_id: courseId,
         }),
         contentType: "application/json;charset=UTF-8",
         success: function(resp) {
@@ -265,7 +298,7 @@ const changeHandler = function(e) {
 const processTable = function() {
     
     var courseId = getCourseId();
-
+    var arr = new Array();
     var outcomeId = new Array();
 
     // Collect specific outcome IDs
