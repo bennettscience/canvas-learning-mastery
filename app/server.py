@@ -10,7 +10,11 @@ from app.models import Outcome, Assignment
 from werkzeug.exceptions import HTTPException
 # from flask_login import current_user
 
+
 class Outcomes:
+
+    def __init__(self, canvas):
+        self.canvas = canvas
 
     @staticmethod
     def save_course_data(canvas, course_id, assignment_group_id):
@@ -31,6 +35,7 @@ class Outcomes:
 
         # Instantiate a list to hold return data
         data = []
+        app.logger.debug(course_id)
 
         course = canvas.get_course(course_id)
         outcome_groups = course.get_outcome_groups_in_context()
@@ -47,10 +52,14 @@ class Outcomes:
             # Store each outcome in the database
             for o in outcomes:
                 outcome_data = o.outcome
-                query = Outcome.query.get(outcome_data['id'])
+                query = Outcome.query.filter_by(outcome_id=outcome_data['id'],
+                                                course_id=course_id
+                                                )
+                app.logger.debug(query.first())
+                app.logger.debug(f'Need an outcome: {query.all() is None}')
 
-                if query is None:
-                    outcome = Outcome(id=outcome_data['id'], title=outcome_data['title'], course_id=course_id)
+                if query.first() is None:
+                    outcome = Outcome(outcome_id=outcome_data['id'], title=outcome_data['title'], course_id=course_id)
                     app.logger.debug('New Outcome: %s', outcome)
                     db.session.add(outcome)
                     db.session.commit()
@@ -60,7 +69,7 @@ class Outcomes:
 
             if query is None:
                 assignment = Assignment(id=a['id'], title=a['name'], course_id=course_id)
-                data.append({'assignment_id':a['id'], 'assignment_name':a['name']})
+                data.append({'assignment_id': a['id'], 'assignment_name': a['name']})
                 app.logger.debug('New Assignment: %s', assignment)
                 db.session.add(assignment)
                 db.session.commit()
@@ -146,7 +155,7 @@ class Outcomes:
                 pass
 
         return obj
-
+        
     @classmethod
     def update_student_scores(cls, canvas, course_id, student_ids, outcome_ids):
 
@@ -179,12 +188,12 @@ class Outcomes:
         result = pool.map(items, student_ids)
 
         return result
-    
+
     @classmethod
-    def get_student_rollups(cls, canvas, course_id, student_id):
-        
-        course = canvas.get_course(course_id)
-        
+    def get_student_rollups(cls, course_id, student_id):
+
+        course = cls.canvas.get_course(course_id)
+
         data = course.get_outcome_result_rollups(user_ids=student_id)
         return data
 
@@ -230,19 +239,16 @@ class Assignments:
             for item in query:
                 # Store the Query objects as dictionaries in a list
                 outcome_list.append(item.__dict__)
+                
                 # Store assignment IDs to pass to Canvas
                 assignment_list.append(item.id)
 
-            # app.logger.debug('Assignments: %s', assignment_list)
-            # app.logger.debug('Outcomes: %s', outcome_list)
-
-            # get active students to request submissions for
+            app.logger.debug('Outcome list: %s', outcome_list)
+            # get active students to request submissions, store IDs in a list
             enrollments = course.get_enrollments(role='StudentEnrollment', state='active')
             for e in enrollments:
                 item = json.loads(e.to_json())
                 student_list.append(item['user']['id'])
-
-            # app.logger.debug('Requested student list: %s', student_list)
 
             # Request the submissions from Canvas sorted by user
             submissions = course.get_multiple_submissions( 
@@ -257,10 +263,6 @@ class Assignments:
                     
                     item = json.loads(sub.to_json())
 
-                    # app.logger.debug('Processing %s', item['user']['name'])
-
-                    # app.logger.debug(pprint.pprint(item['user']))
-
                     if item['user']['id'] in student_list:
                         app.logger.debug('Found ' + item['user']['name'] + ' in the list.')
                         canvas_id = item['user']['id']
@@ -272,17 +274,22 @@ class Assignments:
                         assignment_name = item['assignment']['name']
 
                         # Get the outcome ID if it matches the assignment ID
-                        outcome_id = [int(val['outcome_id']) for val in outcome_list if val['id'] == assignment_id]
+                        outcome_id = Outcome.query.get(Assignment.query.get(assignment_id).outcome_id).outcome_id
+                        # outcome_id = Assignment.query.get(assignment_id).outcome_id
+                        # outcome_id = [int(val['outcome_id']) for val in outcome_list if val['id'] == assignment_id]
 
                         # app.logger.debug('Appending submissions for %s', item['user']['name'])
                         submission = {
-                            'assignment_id': assignment_id,
-                            'assignment_name': assignment_name,
-                            'assignment_score': assignment_score,
-                            'outcome_id': int(outcome_id[0]),
+                            outcome_id: {
+                                'assignment_id': assignment_id,
+                                'assignment_name': assignment_name,
+                                'assignment_score': assignment_score,
+                                'outcome_id': outcome_id,
+                            }
                         }
+
                         submissions.append(submission)
-                
+            
                 # app.logger.debug(pprint.pprint(submissions))
                     else:
                         # app.logger.debug('%s is not in the student list', item['user']['name'])
