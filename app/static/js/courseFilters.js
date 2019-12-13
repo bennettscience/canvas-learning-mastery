@@ -33,7 +33,6 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
         type: 'GET',
         url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
         success: function(result) {
-            result = result.data;
             const table = document.querySelector('#student-rubric-table');
             table.innerHTML = ''; // Empty the table
 
@@ -79,7 +78,6 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
 
                 // Loop through the submissions array for each student
                 result.columns.forEach((item) => {
-                    console.log(rubric)
                     var td = document.createElement('td');
                     td.setAttribute('data-outcome', item['id'])
                     if(student.rubric && rubric[item['id']]['points']) {
@@ -166,7 +164,6 @@ const changeSection = function(sectionId) {
             if(scores) {
                 scores.forEach((student) => {
                     var tr = document.createElement('tr');
-
                     tr.setAttribute('id', student['canvas_id']);
                     tr.setAttribute('class', 'trow');
                     var name = document.createElement('td');
