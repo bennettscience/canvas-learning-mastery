@@ -33,6 +33,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
         type: 'GET',
         url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
         success: function(result) {
+            result = result.success;
             const table = document.querySelector('#student-rubric-table');
             table.innerHTML = ''; // Empty the table
 
