@@ -17,12 +17,16 @@ const getSectionAssignments = function(sectionId) {
         url: `../course/${courseId}/assignments`,
         success: function(result) {
 
+            assignmentSelect.firstElementChild.innerText = "Select Assignment"
+
             for(var r=0; r<result.success.length; r++) {
                 let option = document.createElement('option');
                 option.value = result.success[r].id;
                 option.innerText = result.success[r].name;
                 assignmentSelect.appendChild(option);
             }
+            assignmentSelect.disabled = false;
+            document.querySelector(`#load-assignment-rubrics-btn`).disabled = true;
         }
     })
 }
@@ -34,6 +38,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
         url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
         success: function(result) {
             result = result.success;
+            console.log(result.columns)
             const table = document.querySelector('#student-rubric-table');
             table.innerHTML = ''; // Empty the table
 
@@ -323,7 +328,7 @@ document.querySelector("#section").addEventListener("change", function(e) {
     changeSection(sectionId);
 });
 
-document.querySelector("#rubric-section").addEventListener("change", function(e) {
+document.querySelector("#load-assignment-rubrics-btn").addEventListener("click", function(e) {
     const sectionId = e.target.value;
     getSectionAssignments(sectionId)
 })
