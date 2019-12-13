@@ -336,11 +336,14 @@ class Assignments:
         columns = []
 
         for criteria in rubric:
-            column = {}
-            column['id'] = criteria['id']
-            column['name'] = criteria['description']
-            column['outcome_id'] = criteria['outcome_id']
-            columns.append(column)
+            if 'outcome_id' in criteria:
+                print(criteria)
+
+                column = {}
+                column['id'] = criteria['id']
+                column['name'] = criteria['description']
+                column['outcome_id'] = criteria['outcome_id']
+                columns.append(column)
 
         # Get submissions for the assignment to get rubric evals
         submissions = assignment.get_submissions(include=('rubric_assessment', 'user'))
