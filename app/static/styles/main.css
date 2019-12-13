@@ -117,10 +117,12 @@ select[multiple=multiple] {
   -webkit-transition: box-shadow 0.2s;
   transition: box-shadow 0.2s;
 }
+
 select[multiple=multiple]:hover {
   border-color: #cccccc;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 }
+
 select option[disabled] {
   color: #eeeeee;
   text-shadow: none;
@@ -221,6 +223,7 @@ input[type=submit]::after {
 table {
   width: 100%;
   overflow: auto;
+  position: relative;
 }
 
 #scores {
@@ -230,7 +233,11 @@ table {
 th {
   text-align: left;
   border-bottom: 1px solid black;
+  position: sticky;
+  top: 0;
+  background-color: #d0d0d0;
 }
+
 td,
 th {
   padding: 10px;
