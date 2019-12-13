@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block app_content %}
+{% extends 'base.html' %} 
+{% import 'bootstrap/wtf.html' as wtf %}
+{% from "_formhelpers.html" import render_field %}
+{% block app_content %}
 <ul class="nav nav-tabs" id="myTab" role="tablist">
   <li class="nav-item active">
     <a class="nav-link" id="alignments-tab" data-toggle="tab" href="#alignments" role="tab" aria-controls="alignments"
@@ -16,13 +19,21 @@
 
 <div class="tab-content" id="myTabContent">
   <div class="tab-pane fade active in" id="alignments" role="tabpanel" aria-labelledby="alignments">
-    <h1>Alignments</h1>
-    <p>Which assignment group do you want to align with Outcomes?</p>
-    <form class="" action="/save" method="post">
+    <div class="row">
+      <div class="container">
+        <h1>Alignments</h1>
+        <p>Which assignment group do you want to align with Outcomes?</p>
+        {{ wtf.form_field(form.assignment_groups, class="form-control") }}
+        {{ wtf.form_field(form.submit, class="btn btn-primary") }}
+
+      </div>
+    <!-- <form class="" action="/save" method="post">
       <p>{{ form.id }}</p>
       <p class="form-select">{{ form.assignment_groups}}</p>
-      <p>{{ form.submit() }}</p>
-    </form>
+      <p class="btn btn-primary">{{ form.submit() }}</p>
+    </form> -->
+    </div>
+    <div class="row">
     <table id="alignment-table">
       <tr>
         <th>outcome id</th>
@@ -52,6 +63,7 @@
         {% endif %}
       </tr>
     </table>
+    </div>
   </div>
   
   <div class="tab-pane fade" id="scores" role="tabpanel">
@@ -123,31 +135,37 @@
       </circle>
       </svg>
     </div>
-    <div class="section-select form-select">
-      <select id="section" class="" name="">
-        <option value="">Select section</option>
-        {% for s in sections %}
-        <option value="{{s['id']}}">{{s['name']}}</option>
-        {% endfor %}
-      </select>
+    <div class="row">
+      <div class="container">
+        <div class="form-group" id="section-select">
+          <div class="form-select">
+            <select id="section" class="form-control" name="">
+              <option value="">Select section</option>
+              {% for s in sections %}
+              <option value="{{s['id']}}">{{s['name']}}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <button id="sectionReload" disabled>&#8635;</button>
+          <div class="msg"></div>
+        </div>
+      </div>
     </div>
-    <button id="sectionReload" disabled>&#8635;</button>
-    <div class="msg"></div>
+    <div class="row">
+      <div class="container">
+        <button id="update-scores" class="btn btn-primary" onclick="processTable()">Update Scores</button>
+      </div>
+    </div>
     <div class="table-wrap">
-    <table id="student-table">
-      <!-- <thead>
-        <th>
-          <div style="width: 150px">Student</div>
-        </th>
-      </thead>
-      <tbody></tbody> -->
-    </table>
+    <table id="student-table"></table>
     </div>
-    <button id="update-scores" onclick="processTable()">Update Scores</button>
   </div> <!-- / #scores-->
 
   <div class="tab-pane fade" id="rubric" role="tabpanel">
     <h1>Rubric Detail</h1>
+    <p>Select a single assignment to see the raw score and aligned Outcome scores.</p>
     <div class="loader-wrap">
       <div class="message">
         Loading...
@@ -215,23 +233,25 @@
       </circle>
       </svg>
     </div>
-    <div class="section-select form-select">
-      <select id="rubric-section" class="" name="">
-        <option value="">Select section</option>
-        {% for s in sections %}
-        <option value="{{s['id']}}">{{s['name']}}</option>
-        {% endfor %}
-      </select>
+    <div class="row">
+      <div class="container">
+        <div class="form-group" id="load-assignments-btn">
+          <button class="btn btn-primary" type="button" id="load-assignment-rubrics-btn">Load Assignments</button>
+        </div>
+        <div class="form-group">
+          <div class="form-select">
+            <select id="rubric-assignment-select" class="form-control" name="" disabled>
+              <option value="">Load Assignments to begin</option>
+            </select>
+          </div>
+          <div class="msg"></div>
+        </div>
+      </div>
     </div>
-    <div class="assignment-select form-select">
-      <select id="rubric-assignment-select" class="" name="">
-        <option value="">Select assignment</option>
-      </select>
-    </div>
-    <button id="sectionReload" disabled>&#8635;</button>
-    <div class="msg"></div>
-    <div class="table-wrap">
-    <table id="student-rubric-table"></table>
+    <div class="row">
+      <div class="table-wrap">
+        <table id="student-rubric-table"></table>
+      </div>
     </div>
   </div> <!-- / #rubrics-->
   

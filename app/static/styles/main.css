@@ -103,55 +103,10 @@ nav a:hover {
   transform:rotateZ(360deg);
 }
 
-.form-select {
-  display: inline-block;
-  position: relative;
-  width: 25%;
-  -moz-user-select: -moz-none;
-  -ms-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
-  background: #ffffff;
-  border: 1px solid #cbcbcb;
-  border-radius: 3px;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(0, 0, 0, 0.07);
-  -moz-transition: box-shadow 0.2s;
-  -o-transition: box-shadow 0.2s;
-  -webkit-transition: box-shadow 0.2s;
-  transition: box-shadow 0.2s;
-}
-.form-select:focus, .form-select:hover {
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-}
-.form-select:after {
-  content: '▾';
-  position: absolute;
-  top: 0;
-  right: 12px;
-  z-index: 1;
-  color: #000000;
-  line-height: 40px;
-  font-size: 14px;
-}
+#section-select { width: auto; }
 
-select {
-  position: relative;
-  background: transparent;
-  background-image: none;
-  display: block;
-  width: 100%;
-  outline: none;
-  color: #0e0e0e;
-  cursor: pointer;
-  z-index: 2;
-  border: none;
-  padding: 10px 10px 10px 5px;
-  text-overflow: '';
-  text-indent: 5px;
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  font-size: 14px;
-}
+#load-assignments-btn { display: block }
+
 select[multiple=multiple] {
   height: auto;
   border: 1px solid #cbcbcb;
@@ -229,23 +184,6 @@ select::-ms-expand {
   transform: translateY(-50%);
 }
 
-#update-scores {
-  display: block;
-  height: 48px;
-  width: 160px;
-  position: absolute;
-  right: 25px;
-  top: 0;
-  font-size: 14px;
-  background-color: rgb(27, 150, 2);
-  text-transform: uppercase;
-  font-weight: 600;
-  border: 0;
-  color: #efefef;
-  cursor: pointer;
-  transition: box-shadow 0.3s ease-in-out;
-}
-
 #update-scores::after {
   content: "✓";
   color: #efefef;
@@ -257,18 +195,9 @@ select::-ms-expand {
   box-shadow: 0 0 0 5px rgba(8, 228, 63, 0.6);
 }
 
-input[type=submit] {
-  display: block;
-  height: 48px;
-  width: auto;
-  font-size: 14px;
-  background-color: rgb(27, 150, 2);
-  text-transform: uppercase;
-  font-weight: 600;
-  border: 0;
-  color: #efefef;
-  cursor: pointer;
-  transition: box-shadow 0.3s ease-in-out;
+.form-group { 
+  display: inline-block;
+  width: 35%;
 }
 
 input[type=submit]::after {
@@ -278,9 +207,9 @@ input[type=submit]::after {
   font-size: 16px;
 }
 
-input[type=submit]:hover {
+/* input[type=submit]:hover {
   box-shadow: 0 0 0 5px rgba(8, 228, 63, 0.6);
-}
+} */
 
 *,
 *:before,
