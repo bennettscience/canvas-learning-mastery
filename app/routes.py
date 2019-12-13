@@ -334,7 +334,6 @@ def get_course_assignments(course_id):
 
 @app.route('/course/<course_id>/assignments/<assignment_id>/rubric', methods=['GET'])
 def get_assignment_rubric(course_id, assignment_id):
-
     canvas = init_canvas(session['oauth_token'])
 
     data = Assignments.get_assignment_rubric_results(canvas, course_id, assignment_id)
@@ -373,7 +372,7 @@ def align_items():
     data = request.json
 
     # Get the Outcome and Assignment specified
-    outcome = Outcome.query.get(data['outcome_id'])
+    outcome = Outcome.query.filter_by(outcome_id=data['outcome_id']).first()
     assignment = Assignment.query.get(data['assignment_id'])
 
     # Run the alignment and save
