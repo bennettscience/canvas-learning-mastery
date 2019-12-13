@@ -338,7 +338,7 @@ def get_assignment_rubric(course_id, assignment_id):
 
     data = Assignments.get_assignment_rubric_results(canvas, course_id, assignment_id)
 
-    return data
+    return jsonify({"success": data})
 
 @app.route('/save', methods=['POST'])
 def save_outcomes():
