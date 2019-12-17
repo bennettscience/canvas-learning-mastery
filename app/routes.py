@@ -218,7 +218,7 @@ def dashboard():
 
     # Need to specify total students in the API call.
     all_courses = canvas.get_courses(state=['available'], enrollment_state=[
-                                     'active'], include='total_students')
+                                     'active'], enrollment_type='teacher', include='total_students')
 
     # Instantiate a list to hold pared down course objects for display
     courses = []
