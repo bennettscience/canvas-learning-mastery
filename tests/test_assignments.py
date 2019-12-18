@@ -35,7 +35,6 @@ class TestAssignments(unittest.TestCase):
         o1 = Outcome(id=123, title='Some outcome 1')
         db.session.add_all([a1, o1])
         db.session.commit()
-
         o1.align(a1)
 
     def test_get_assignment_rubric_results(self):

@@ -34,7 +34,7 @@ migrate = Migrate(app, db)
 bootstrap = Bootstrap(app)
 CORS(app, resources={r"/student*": {"origins": "https://elkhart.instructure.com/*"}})
 
-from app import app, routes
+from app import app, routes, errors
 
 # Connect to Sentry
 sentry_sdk.init(

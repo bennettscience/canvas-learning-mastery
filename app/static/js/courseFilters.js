@@ -175,6 +175,8 @@ const changeSection = function(sectionId) {
                     var name = document.createElement('td');
                     name.innerText = `${student['user_name']}`;
                     tr.appendChild(name);
+                    
+                    console.log(student.submissions)
 
                     // Use the headers to index the submissions cells to
                     // make sure the correct score is in the correct column.
@@ -217,12 +219,6 @@ const changeSection = function(sectionId) {
 
 const changeHandler = function(e) {
     var elem = e;
-
-    // if(!sectionLoaded) {
-    //     $("#sectionReload").css('display', 'none');
-    // } else {
-    //     $("#sectionReload").css('display', 'block');
-    // }
 
     var courseId = getCourseId();
     var assignmentId = e.target.value;
@@ -289,9 +285,9 @@ const processTable = function() {
         type: "POST",
         url: "/outcomes",
         data: JSON.stringify({
-        student_id_list: arr,
-        course_id: courseId,
-        outcome_id_list: outcomeId
+            student_id_list: arr,
+            course_id: courseId,
+            outcome_id_list: outcomeId
         }),
         contentType: "application/json",
         success: function(resp) {

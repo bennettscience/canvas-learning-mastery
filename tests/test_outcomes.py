@@ -9,6 +9,11 @@ def setUpModule():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
     db.create_all()
 
+    o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
+    o2 = Outcome(title='Some outcome 1', course_id=888, outcome_id=123)
+
+    db.session.add_all([o1, o2])
+    db.session.commit()
 
 def tearDownModule():
     db.session.remove()
@@ -37,9 +42,12 @@ class TestAddOutcomes(unittest.TestCase):
         db.session.add_all([o1, o2])
         db.session.commit()
 
+    def test_query_outcomes(self):
+        outcome = Outcome.query.filter_by(outcome_id=123).first()
+        self.assertIs(outcome.outcome_id, 123)
+
     def test_align_outcome_to_assignment(self):
         a1 = Assignment(id=123456, title='Some assignment', course_id=999)
-        o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
         db.session.add(a1)
         db.session.commit()
 
