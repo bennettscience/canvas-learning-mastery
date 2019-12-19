@@ -4,12 +4,14 @@
   <table>
     <thead>
       <th>Course</th>
+      <th>Year</th>
       <th>Essential Standards</th>
     </thead>
     <tbody>
       {% for course in courses %}
       <tr>
         <td><a href="{{ url_for('course', course_id=course.id) }}">{{course.name}}</a></td>
+        <td>{{course.term}}</td>
         <td>{{course.outcomes}}</td>
       </tr>
       {% endfor %}
