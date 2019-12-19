@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from flask import json, jsonify, redirect, render_template, request, session, url_for
 from requests_oauthlib import OAuth2Session
 from app.models import Outcome, Assignment, User
@@ -222,8 +223,10 @@ def dashboard():
     # Instantiate a new Canvas object
     canvas = init_canvas(session["oauth_token"])
 
+    user = canvas.get_current_user()
+
     # Need to specify total students in the API call.
-    all_courses = canvas.get_courses(
+    all_courses = user.get_courses(
         state=["available"],
         enrollment_state=["active"],
         enrollment_type="teacher",
@@ -241,10 +244,11 @@ def dashboard():
         item["outcomes"] = query.count()
         item["id"] = c.id
         item["name"] = c.name
+        item["term"] = datetime.strptime(c.start_at, "%Y-%m-%dT%H:%M:%SZ").year
 
         courses.append(item)
 
-    app.logger.info("Courses: %s", courses)
+    courses = sorted(courses, key=lambda x: x["term"], reverse=True)
 
     return render_template("dashboard.html", title="Dashboard", courses=courses)
 
