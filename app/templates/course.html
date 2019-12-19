@@ -22,10 +22,12 @@
     <div class="row">
       <div class="container">
         <h1>Alignments</h1>
-        <p>Which assignment group do you want to align with Outcomes?</p>
-        {{ wtf.form_field(form.assignment_groups, class="form-control") }}
-        {{ wtf.form_field(form.submit, class="btn btn-primary") }}
-
+        <form class="" action="/save" method="post">
+          <p>Which assignment group do you want to align with Outcomes?</p>
+          {{ form.id }}
+          {{ wtf.form_field(form.assignment_groups, class="form-control") }}
+          {{ wtf.form_field(form.submit, class="btn btn-primary") }}
+        </form>
       </div>
     <!-- <form class="" action="/save" method="post">
       <p>{{ form.id }}</p>
