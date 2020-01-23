@@ -12,4 +12,4 @@ keysecret.txt
 lti.xml
 tmp/
 settings.py
-
+app/*.pyc
