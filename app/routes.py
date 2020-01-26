@@ -236,6 +236,7 @@ def dashboard():
     # Instantiate a list to hold pared down course objects for display
     courses = []
     for c in all_courses:
+        print(c)
         item = {}
         query = Assignment.query.filter(Assignment.course_id == c.id).filter(
             Assignment.outcome_id != None
@@ -244,7 +245,10 @@ def dashboard():
         item["outcomes"] = query.count()
         item["id"] = c.id
         item["name"] = c.name
-        item["term"] = datetime.strptime(c.start_at, "%Y-%m-%dT%H:%M:%SZ").year
+        if c.start_at is not None:
+            item["term"] = datetime.strptime(c.start_at, "%Y-%m-%dT%H:%M:%SZ").year
+        else:
+            item["term"] = datetime.strptime(c.created_at, "%Y-%m-%dT%H:%M:%SZ").year
 
         courses.append(item)
 
