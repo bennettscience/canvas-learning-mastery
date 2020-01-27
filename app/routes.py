@@ -4,98 +4,29 @@ from flask import json, jsonify, redirect, render_template, request, session, ur
 from requests_oauthlib import OAuth2Session
 from app.models import Outcome, Assignment, User
 from app.forms import StoreOutcomesForm
-from app.server import Outcomes, Assignments
+from app.assignments import Assignments
+from app.outcomes import Outcomes
+from app.courses import Course
+from app.auth import Auth
+from app.user import CanvasUser
 from flask_login import current_user, login_user, logout_user
 from canvasapi import Canvas, exceptions
 from app import app, db
 
-# Canvas OAuth login
-oauth = OAuth2Session(
-    app.config["OAUTH_CREDENTIALS"]["canvas"]["id"],
-    redirect_uri=app.config["OAUTH_CREDENTIALS"]["canvas"]["redirect_url"],
-)
 
-
-def init_canvas(token):
-    """ Launch a new Canvas object
-    :type token: Str
-    :param token: OAuth token
-
-    :rtype:
-    """
-    expire = token["expires_at"]
-    app.logger.info("token expires at: %s", expire)
-    if time.time() > expire:
-        app.logger.info("Requesting a new token from Canvas")
-        # get a new access token and store it
-        client_id = app.config["OAUTH_CREDENTIALS"]["canvas"]["id"]
-        refresh_url = app.config["OAUTH_CREDENTIALS"]["canvas"]["token_url"]
-
-        extra = {
-            "client_id": client_id,
-            "client_secret": app.config["OAUTH_CREDENTIALS"]["canvas"]["secret"],
-            "refresh_token": token["refresh_token"],
-        }
-
-        oauth_refresh = OAuth2Session(client_id, token=token)
-        session["oauth_token"] = oauth_refresh.refresh_token(refresh_url, **extra)
-
-    canvas = Canvas(
-        "https://elkhart.instructure.com", session["oauth_token"]["access_token"]
-    )
-    return canvas
-
-
-def refresh_oauth_token(user):
-    """ Get the user refresh token for API calls
-    :type user: Int
-    :param user: Canvas user ID
-
-    :rtype: Str token
-    """
-    token = oauth.fetch_token(
-        app.config["OAUTH_CREDENTIALS"]["canvas"]["token_url"],
-        grant_type="refresh_token",
-        client_id=app.config["OAUTH_CREDENTIALS"]["canvas"]["id"],
-        client_secret=app.config["OAUTH_CREDENTIALS"]["canvas"]["secret"],
-        refresh_token=user.refresh_token,
-    )
-
-    return token
-
-
-@app.route("/refresh")
-def refresh():
-    token = session["oauth_token"]
-    client_id = app.config["OAUTH_CREDENTIALS"]["canvas"]["id"]
-    refresh_url = app.config["OAUTH_CREDENTIALS"]["canvas"]["token_url"]
-
-    extra = {
-        "client_id": client_id,
-        "client_secret": app.config["OAUTH_CREDENTIALS"]["canvas"]["secret"],
-        "refresh_token": token["refresh_token"],
-    }
-
-    canvas = OAuth2Session(client_id, token=token)
-    session["oauth_token"] = canvas.refresh_token(refresh_url, **extra)
-    print(time.time())
-    return jsonify(session["oauth_token"])
-
-
-@app.route("/", methods=["GET", "POST"])
-@app.route("/index", methods=["GET", "POST"])
-# @lti(request='initial', role='any', app=app)
+@app.route("/", methods=["GET"])
+@app.route("/index", methods=["GET"])
 def index():
+    """ App entrance.
 
-    app.logger.info("Index loaded")
+    If user is logged in, load the dashboard. Otherwise, load the login screen
+
+    """
+
     if not current_user.is_anonymous and session["_fresh"]:
-        app.logger.info("Current user: %s", current_user)
-        app.logger.info("Session: %s", session)
         expire = session["oauth_token"]["expires_at"]
-        app.logger.info("Token expires at: %s", expire)
 
         if time.time() > expire:
-            app.logger.info("Requesting a new token from Canvas")
             # get a new access token and store it
             token = session["oauth_token"]
             client_id = app.config["OAUTH_CREDENTIALS"]["canvas"]["id"]
@@ -116,30 +47,7 @@ def index():
         return render_template("login.html", title="Canvas Mastery Doctor")
 
 
-@app.route("/logout", methods=["GET"])
-def logout():
-    # Delete the user key from Canvas
-    # The canvasapi module doesn't have an endpoint, so we need
-    # to build one with requests
-    # DELETE /login/oauth2/token
-    # https://canvas.instructure.com/doc/api/file.oauth_endpoints.html#post-login-oauth2-token
-    # headers = {
-    #     'Authorization': 'access_token ' + session['oauth_token']['access_token']
-    # }
-
-    # r = requests.delete(app.config['OAUTH_CREDENTIALS']['canvas']['token_url'], \
-    #       headers=headers)
-    # app.logger.info(r.json())
-
-    app.logger.info("Clearing session")
-    session.clear()
-    logout_user()
-
-    # Finally return the user to the index
-    return redirect(url_for("index"))
-
-
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET"])
 def login():
     """ Log in to the app via OAuth through Canvas
     :methods: GET
@@ -149,13 +57,19 @@ def login():
         400:
             description: Bad request.
     """
-    app.logger.info("Launching oauth flow")
-    authorization_url, state = oauth.authorization_url(
-        app.config["OAUTH_CREDENTIALS"]["canvas"]["authorization_url"]
-    )
-
+    authorization_url, state = Auth.login()
     session["oauth_state"] = state
+
     return redirect(authorization_url)
+
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    """ Log the current user out."""
+    session.clear()
+    logout_user()
+
+    return redirect(url_for("index"))
 
 
 @app.route("/callback", methods=["GET"])
@@ -168,36 +82,23 @@ def callback():
         400:
             description: Bad request
     """
-    app.logger.info("Received token, validating with Canvas,")
-    token = oauth.fetch_token(
-        app.config["OAUTH_CREDENTIALS"]["canvas"]["token_url"],
-        client_secret=app.config["OAUTH_CREDENTIALS"]["canvas"]["secret"],
-        authorization_response=request.url,
-        state=session["oauth_state"],
-        replace_tokens=True,
-    )
+
+    token = Auth.get_token()
 
     session["oauth_token"] = token
 
     user_id = str(session["oauth_token"]["user"]["id"])
     user_name = session["oauth_token"]["user"]["name"]
 
-    app.logger.info("The user is %s with ID %s", user_name, user_id)
-    app.logger.info("Querying database for user")
-
     # Query the DB for an existing user
     user = User.query.filter_by(canvas_id=user_id).first()
 
     if user:
-        app.logger.info("User: %s", user)
-
         # Update the user token
         if user.token != session["oauth_token"]["access_token"]:
             user.token = session["oauth_token"]["access_token"]
             db.session.commit()
     else:
-        app.logger.info("Creating new user in db")
-
         # User doesn't exist, create a new one
         user = User(
             canvas_id=user_id,
@@ -208,49 +109,17 @@ def callback():
         )
         db.session.add(user)
         db.session.commit()
+
     login_user(user, True)
 
     return redirect(url_for("dashboard"))
 
 
-@app.route("/dashboard", methods=["GET", "POST"])
+@app.route("/dashboard", methods=["GET"])
 def dashboard():
-    """ List the logged-in user's courses
-    :methods: GET
-
-    :rtype: List courses
-    """
-    # Instantiate a new Canvas object
-    canvas = init_canvas(session["oauth_token"])
-
-    user = canvas.get_current_user()
-
-    # Need to specify total students in the API call.
-    all_courses = user.get_courses(
-        state=["available"],
-        enrollment_state=["active"],
-        enrollment_type="teacher",
-        include="total_students",
-    )
-
-    # Instantiate a list to hold pared down course objects for display
-    courses = []
-    for c in all_courses:
-        print(c)
-        item = {}
-        query = Assignment.query.filter(Assignment.course_id == c.id).filter(
-            Assignment.outcome_id != None
-        )
-
-        item["outcomes"] = query.count()
-        item["id"] = c.id
-        item["name"] = c.name
-        if c.start_at is not None:
-            item["term"] = datetime.strptime(c.start_at, "%Y-%m-%dT%H:%M:%SZ").year
-        else:
-            item["term"] = datetime.strptime(c.created_at, "%Y-%m-%dT%H:%M:%SZ").year
-
-        courses.append(item)
+    """ Display the logged-in user's courses. """
+    user = CanvasUser()
+    courses = user.get_user_courses()
 
     courses = sorted(courses, key=lambda x: x["term"], reverse=True)
 
@@ -260,44 +129,37 @@ def dashboard():
 @app.route("/course/<course_id>", methods=["GET"])
 def course(course_id):
     """ Single course view
-    :type course_id: Int
     :param course_id: Canvas course ID
+    :type course_id: Int
 
-    :methods: POST
+    :methods: GET
 
     :rtype:
     """
-    app.logger.info("Course requested: %s", course_id)
-
     # Instantiate a new Canvas object
-    canvas = init_canvas(session["oauth_token"])
+    canvas = Auth.init_canvas(session["oauth_token"])
 
     # Get the assignment groups from Canvas
-    current_course = canvas.get_course(course_id)
-    sections = current_course.get_sections()
+    course = canvas.get_course(course_id)
+    sections = course.get_sections()
 
-    query = current_course.get_assignment_groups()
+    query = course.get_assignment_groups()
+    assignment_groups = [(str(a.id), a.name) for a in query]
 
     # Populate assignment_group_ids into the Outcomes fetch form dynamically
     form = StoreOutcomesForm(request.values, id=course_id)
-    assignment_groups = [(str(a.id), a.name) for a in query]
-
-    app.logger.debug("Setting form assignment groups to: %s", assignment_groups)
     form.assignment_groups.choices = assignment_groups
 
     # Look only in the current course
     assignments = Assignment.query.filter_by(course_id=course_id)
-    app.logger.info("Assignments: %s", assignments)
 
     if not assignments:
-        app.logger.info("No assingments found for this course")
         assignments = []
 
     # Look up any existing Outcomes by course ID
     outcomes = Outcome.query.filter(Outcome.course_id == course_id)
 
     if not outcomes:
-        app.logger.debug("No outcomes, returning None")
         outcomes = None
 
     return render_template(
@@ -309,16 +171,15 @@ def course(course_id):
         form=form,
     )
 
-
 @app.route("/section", methods=["POST"])
 def section():
+    """ Show single section. """
     data = request.json
 
-    canvas = init_canvas(session["oauth_token"])
+    canvas = Auth.init_canvas(session["oauth_token"])
 
     # Look only in the current course
     assignments = Assignment.query.filter_by(course_id=data["course_id"])
-    app.logger.info("Assignments: %s", assignments)
 
     if not assignments:
         app.logger.info("No assingments found for this course")
@@ -349,23 +210,21 @@ def section():
         )
 
     return jsonify(scores)
-    # return jsonify({"assignments": assignments, "scores": scores})
 
 
 @app.route("/course/<course_id>/assignments", methods=["GET"])
 def get_course_assignments(course_id):
 
-    canvas = init_canvas(session["oauth_token"])
+    canvas = Auth.init_canvas(session["oauth_token"])
 
     data = Assignments.get_course_assignments(canvas, course_id)
-    print(data)
 
     return jsonify({"success": data})
 
 
 @app.route("/course/<course_id>/assignments/<assignment_id>/rubric", methods=["GET"])
 def get_assignment_rubric(course_id, assignment_id):
-    canvas = init_canvas(session["oauth_token"])
+    canvas = Auth.init_canvas(session["oauth_token"])
 
     data = Assignments.get_assignment_rubric_results(canvas, course_id, assignment_id)
 
@@ -383,14 +242,11 @@ def save_outcomes():
     data = request.values
 
     # Instantiate a new Canvas object
-    canvas = init_canvas(session["oauth_token"])
-
-    app.logger.debug(
-        "Course ID: %s, Assignment group ID: %s", data["id"], data["assignment_groups"]
-    )
+    canvas = Auth.init_canvas(session["oauth_token"])
 
     # Store the course Outcomes
-    Outcomes.save_course_data(canvas, data["id"], data["assignment_groups"])
+    Outcomes.save_outcome_data(canvas, data["id"])
+    Assignments.save_assignment_data(canvas, data["id"], data["assignment_groups"])
 
     # Reload the page
     return redirect(url_for("course", course_id=data["id"]))
@@ -413,20 +269,13 @@ def align_items():
     return jsonify({"success": [data["outcome_id"], data["assignment_id"]]})
 
 
-@app.route("/outcomes", methods=["POST"])
-def get_user_outcomes():
-    """ Get the Outcomes for the students
-    :raises:
-
-    :rtype:
-    """
-    app.logger.debug("Requested score update.")
-
+@app.route("/sync", methods=["POST"])
+def sync_outcome_scores():
+    """ Get the Outcomes for the students. """
     # Instantiate a Canvas object
-    canvas = init_canvas(session["oauth_token"])
+    canvas = Auth.init_canvas(session["oauth_token"])
 
     json = request.json
-    app.logger.debug("Submitted request: %s", json)
 
     # Send the outcome_list in prep for querying a smaller set
     data = Outcomes.update_student_scores(
@@ -445,8 +294,6 @@ def student():
 
     data = request.args
 
-    app.logger.debug(data)
-
     try:
         rollups = Outcomes.get_student_rollups(
             canvas, data.get("course_id"), data.get("student_id")
@@ -461,11 +308,6 @@ def student():
 @app.route("/rubric/<section_id>/<assignment_id>", methods=["GET"])
 def rubric(section_id, assignment_id):
     return {"msg": f"Received {section_id} and {assignment_id}"}
-
-
-# @app.errorhandler(500)
-# def server_error_handler(error):
-#     return render_template("500.html", sentry_event_id=last_event_id()), 500
 
 
 @app.errorhandler(500)
