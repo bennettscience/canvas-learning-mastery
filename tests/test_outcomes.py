@@ -1,9 +1,10 @@
 import unittest
+from canvasapi import Canvas
 
 from app import app, db
 from app.models import Outcome, Assignment
 from sqlalchemy.orm.session import make_transient
-
+from app.outcomes import Outcomes
 
 def setUpModule():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
@@ -11,7 +12,6 @@ def setUpModule():
 
     o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
     o2 = Outcome(title='Some outcome 1', course_id=888, outcome_id=123)
-
     db.session.add_all([o1, o2])
     db.session.commit()
 
@@ -19,17 +19,13 @@ def tearDownModule():
     db.session.remove()
     db.drop_all()
 
-
 class TestAddOutcomes(unittest.TestCase):
-    # @classmethod
-    # def setUpClass(cls):
-    #     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-    #     db.create_all()
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     db.session.remove()
-    #     db.drop_all()
+    def setUp(self):
+        self.canvas = Canvas('https://elkhart.instructure.com', app.config['API']['canvas']['key'])
+
+    def tearDown(self):
+        pass
 
     def test_add_single_outcome(self):
         o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
@@ -53,11 +49,11 @@ class TestAddOutcomes(unittest.TestCase):
 
         o1 = Outcome.query.filter_by(outcome_id=123).first()
         o1.align(a1)
-
-
-class TestFindOutcomes(unittest.TestCase):
-    # def setUp(self):
-    pass
+    
+    def test_add_outcomes_from_canvas(self):
+        Outcomes.save_outcome_data(self.canvas, 39830)
+        outcomes = Outcome.query.filter_by(course_id=39830).all()
+        self.assertEqual(len(outcomes), 2)
 
 
 class TestMigrateOutcomes(unittest.TestCase):

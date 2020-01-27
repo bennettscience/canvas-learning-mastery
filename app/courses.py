@@ -1,16 +1,30 @@
-from canvasapi import Canvas
-from app import app
+from datetime import datetime
+
+from app.models import Assignment
 
 
-class Courses(object):
+class Course(object):
 
-    canvas = Canvas(
-        "https://elkhart.instructure.com/", app.config["API"]["canvas"]["key"]
-    )
+    def __init__(self, course_id):
+        self.course_id = course_id
 
-    def __init__(cls, course_id):
-        course_id = course_id
+    @staticmethod
+    def process_courses(course):
+        
+        query = Assignment.query.filter(Assignment.course_id == course.id).filter(
+            Assignment.outcome_id != None
+        )
 
-    @classmethod
-    def get_course(cls, course_id):
-        return cls.canvas.get_course(course_id)
+        processed = {}
+        processed["id"] = course.id
+        processed["name"] = course.name
+        processed["outcomes"] = query.count()
+
+        if course.start_at is not None:
+            processed["term"] = datetime.strptime(course.start_at, "%Y-%m-%dT%H:%M:%SZ").year
+        else:
+            processed["term"] = datetime.strptime(course.created_at, "%Y-%m-%dT%H:%M:%SZ").year
+
+        return processed
+
+

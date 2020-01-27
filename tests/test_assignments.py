@@ -3,7 +3,7 @@ from canvasapi import Canvas
 
 from app import app, db
 from app.models import Assignment, Outcome
-from app.server import Assignments
+from app.assignments import Assignments
 
 import requests
 import requests_mock
@@ -14,6 +14,7 @@ class TestAssignments(unittest.TestCase):
     def setUp(self):
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
         db.create_all()
+        self.canvas = Canvas('https://elkhart.instructure.com', app.config['API']['canvas']['key'])
 
     def tearDown(self):
         db.session.remove()
@@ -24,6 +25,11 @@ class TestAssignments(unittest.TestCase):
         a2 = Assignment(id=2, title='Some assignment 2', outcome_id='')
         db.session.add_all([a1, a2])
         db.session.commit()
+
+    def test_save_assignment_data(self):
+        Assignments.save_assignment_data(self.canvas, 39830, 41459)
+        query = Assignment.query.all()
+        self.assertEqual(len(query), 2)
 
     def test_alignments(self):
         assignments = Assignment.query.all()
