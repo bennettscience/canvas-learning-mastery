@@ -1,31 +1,71 @@
+import datetime
 from canvasapi import Canvas
 import unittest
 from app.courses import Course
+from app.models import Assignment
+from app import db
 
 
 from app import app
 
 
+def setUpModule():
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+    db.create_all()
+
+    a1 = Assignment(title='Some assignment 1', course_id=1, outcome_id=123)
+    a2 = Assignment(title='Some assignment 2', course_id=1, outcome_id=456)
+    db.session.add_all([a1, a2])
+    db.session.commit()
+
+
+def tearDownModule():
+    db.session.remove()
+    db.drop_all()
+
+
 class TestCourses(unittest.TestCase):
+
     def setUp(self):
-        self.courseObj = Course()
+        class CourseDict(dict):
+            pass
 
-    def test_get_course_as_object(self):
-        course = Course.get_course(33159)
-        self.assertIsInstance(course, object)
+        self.canvas = Canvas('https://elkhart.instructure.com/',
+                        app.config['API']['canvas']['key'])
+        self.course = CourseDict()
 
-    def test_get_course_name(self):
-        course = Course.get_course(33159)
-        self.assertEqual(course.name, "SIOP")
+        self.course.id = 1
+        self.course.name = "Demo"
+        self.course.sis_course_id: None
+        self.course.uuid = "WvAHhY5FINzq5IyRIJybGeiXyFkG3SqHUPb7jZY5"
+        self.course.integration_id = None
+        self.course.sis_import_id = 34
+        self.course.start_at = "2018-06-01T00:00:00Z"
+        self.course.created_at = "2020-05-25T00:00:00Z"
 
-    def test_course_has_start_date(self):
-        course = Course.get_course(33159)
-        self.assertIsNone(course.start_at)
+    def test_process_course_return(self):
+        processed = Course.process_courses(self.course)
+        self.assertIsNotNone(processed)
 
-    def test_get_user_courses(self):
-        courses = Course.get_user_courses()
-        self.assertIsNotNone(courses, "Received courses for the logged in user.")
+    def test_process_course_structure(self):
+        expected = {
+            "id": 1,
+            "name": "Demo",
+            "outcomes": 2,
+            "term": 2018
+        }
 
-    def test_get_user_courses_as_list(self):
-        courses = Course.get_user_courses()
-        self.assertIsInstance(courses, list)
+        processed = Course.process_courses(self.course)
+        self.assertDictEqual(processed, expected)
+
+    def test_course_with_no_start_date(self):
+        expected = {
+            "id": 1,
+            "name": "Demo",
+            "outcomes": 2,
+            "term": 2020
+        }
+
+        self.course.start_at = None
+        processed = Course.process_courses(self.course)
+        self.assertDictEqual(processed, expected)

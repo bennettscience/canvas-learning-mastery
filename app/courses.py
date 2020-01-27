@@ -10,7 +10,7 @@ class Course(object):
 
     @staticmethod
     def process_courses(course):
-        
+
         query = Assignment.query.filter(Assignment.course_id == course.id).filter(
             Assignment.outcome_id != None
         )
@@ -26,5 +26,3 @@ class Course(object):
             processed["term"] = datetime.strptime(course.created_at, "%Y-%m-%dT%H:%M:%SZ").year
 
         return processed
-
-
