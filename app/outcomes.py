@@ -1,15 +1,10 @@
-from canvasapi import Canvas
-from pprint import pprint
-import json
-from pathos.multiprocessing import ProcessingPool as Pool
+import time
+import concurrent.futures
 from functools import partial
+
 from app import app, db
 from app.models import Outcome, Assignment
 from app.errors import FailedJob
-
-from sqlalchemy import exc
-
-# from flask_login import current_user
 
 
 class Outcomes:
@@ -76,7 +71,6 @@ class Outcomes:
 
     @classmethod
     def process_submissions(self, student_id, course, outcome_ids):
-
         """ Process student Outcome and Assignment scores
         :type student_id: Int
         :param student_id: Canvas ID of current student
@@ -112,11 +106,9 @@ class Outcomes:
 
             # Find the matched assignment in the database
             # query = Assignment.query.filter_by(outcome_id=outcome_id).first()
-            query = Outcome.query.filter_by(outcome_id=outcome_id).first()
+            query = Outcome.query.filter_by(outcome_id=outcome_id, course_id=course.id).first()
 
             if query is not None:
-                app.logger.debug(f"Assignment for {query.id}: {query.assignment[0].id}")
-
                 assignment_id = query.assignment[0].id
 
                 # Get the assignment and submissions for the student
@@ -157,7 +149,9 @@ class Outcomes:
     @classmethod
     def request_score_update(self, student_id, course, outcome_ids):
         try:
-            return self.process_submissions(student_id, course, outcome_ids)
+            update = self.process_submissions(student_id, course, outcome_ids)
+            return update
+
         except Exception as ex:
             raise FailedJob(student_id) from ex
 
@@ -181,43 +175,22 @@ class Outcomes:
 
         :rtype: List result
         """
-        chunksize = 5
-        total_jobs = len(student_ids)
+        start = time.perf_counter()
         course = canvas.get_course(course_id)
 
-        with Pool() as pool:
+        job = partial(self.request_score_update, course=course, outcome_ids=outcome_ids)
+        
+        data = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = executor.map(job, student_ids)
 
-            # define args for the processing function
-            job = partial(
-                self.request_score_update, course=course, outcome_ids=outcome_ids
-            )
+            for result in results:
+                data.append(result)
+        
+        finish = time.perf_counter()
+        print(f'Finished in {round(finish-start, 2)} second(s)')
 
-            # Set an iterator to track for processing
-            iter_ = pool.imap(job, student_ids)
-
-            while True:
-                completed = []
-                while len(completed) < chunksize:
-                    try:
-                        result = next(iter_)
-                    except StopIteration:
-                        print("all child jobs completed")
-                        # only break out of inner loop, might still be some completed
-                        # jobs to dispatch
-                        break
-                    except FailedJob as ex:
-                        print("processing of {} job failed".format(ex.args[0]))
-                    else:
-                        completed.append(result)
-
-                if completed:
-                    print("completed:", completed)
-                    # put your dispatch logic here
-                    result = [r for r in iter_ if r is not None]
-                    return result
-
-                if len(completed) < chunksize:
-                    print("all jobs completed")
+        return data
 
     @classmethod
     def get_student_rollups(self, course_id, student_id):
