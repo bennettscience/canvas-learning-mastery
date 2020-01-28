@@ -1,6 +1,5 @@
 import json
-from app import app, db
-from app.outcomes import Outcome
+from app import db
 from app.models import Assignment, Outcome
 
 
@@ -36,10 +35,9 @@ class Assignments:
         if "section_id" in kwargs:
             course = course.get_section(kwargs.get("section_id"))
 
-        print(course)
         # Find assignments which are aligned to Outcomes
         query = Assignment.query.filter(
-            Assignment.course_id == course_id, Assignment.outcome_id != None
+            Assignment.course_id == course_id, Assignment.outcome_id.isnot(None)
         )
 
         if query.all():
