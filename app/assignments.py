@@ -5,9 +5,9 @@ from app.models import Assignment, Outcome
 
 
 class Assignments:
-
-    def __init__(self, canvas):
+    def __init__(self, canvas, course_id):
         self.canvas = canvas
+        self.course_id = course_id
 
     # Return an error if the assignment is forbidden
     # include the assignment name
@@ -26,25 +26,23 @@ class Assignments:
         """
         # make a couple lists to hold processed data
         assignment_list = []
-        student_list = []
         outcome_list = []
         json_data = []
 
+        print(kwargs.get("section_id"))
         # Get the Course object
         course = canvas.get_course(course_id)
 
         if "section_id" in kwargs:
             course = course.get_section(kwargs.get("section_id"))
 
-        # app.logger.debug('Requested course: %s', course_id)
-
+        print(course)
         # Find assignments which are aligned to Outcomes
         query = Assignment.query.filter(
             Assignment.course_id == course_id, Assignment.outcome_id != None
         )
 
         if query.all():
-
             # Loop Item queries
             for item in query:
                 # Store the Query objects as dictionaries in a list
@@ -54,57 +52,37 @@ class Assignments:
                 assignment_list.append(item.id)
 
             # get active students to request submissions, store IDs in a list
-            enrollments = course.get_enrollments(
-                role="StudentEnrollment", state="active"
-            )
-            for e in enrollments:
-                item = json.loads(e.to_json())
-                student_list.append(item["user"]["id"])
+            enrollments = Assignments.build_enrollment_list(course)
 
-            # Request the submissions from Canvas sorted by user
-            submissions = course.get_multiple_submissions(
+            # Request the submissions from Canvas sorted by user in a
+            # single call to speed it up.
+            all_submissions = course.get_multiple_submissions(
                 assignment_ids=assignment_list,
-                student_ids=student_list,
+                student_ids=enrollments,
                 include=("user", "assignment"),
                 grouped=True,
             )
 
-            # Process the Submissions into usable JSON objects
-            for submission_group in submissions:
+            # GroupedSubmission objects are organized by student_id. Each object
+            # has a list of Submissions that need to be processed individually.
+            for student in all_submissions:
 
                 submissions = []
+                items = student.submissions
 
-                for sub in submission_group.submissions:
+                for item in items:
 
-                    item = json.loads(sub.to_json())
+                    # Check that the user is still active in the course
+                    if item.user["id"] in enrollments:
 
-                    if item["user"]["id"] in student_list:
-                        app.logger.debug(
-                            "Found " + item["user"]["name"] + " in the list."
+                        # Build the dictionary keys
+                        canvas_id = canvas_id = item.user["id"]
+                        sis_id = item.user["login_id"]
+                        user_name = item.user["sortable_name"]
+
+                        submissions.append(
+                            Assignments.process_enrollment_submissions(item)
                         )
-                        canvas_id = item["user"]["id"]
-                        sis_id = item["user"]["login_id"]
-                        user_name = item["user"]["sortable_name"]
-
-                        assignment_score = item["grade"]
-                        assignment_id = item["assignment_id"]
-                        assignment_name = item["assignment"]["name"]
-
-                        # Get the outcome ID if it matches the assignment ID
-                        outcome_id = Outcome.query.get(
-                            Assignment.query.get(assignment_id).outcome_id
-                        ).outcome_id
-
-                        submission = {
-                            outcome_id: {
-                                "assignment_id": assignment_id,
-                                "assignment_name": assignment_name,
-                                "assignment_score": assignment_score,
-                                "outcome_id": outcome_id,
-                            }
-                        }
-
-                        submissions.append(submission)
 
                     else:
                         continue
@@ -123,6 +101,42 @@ class Assignments:
 
         return json_data
 
+    @classmethod
+    def build_enrollment_list(self, course):
+        student_list = []
+
+        enrollments = course.get_enrollments(role="StudentEnrollment", state="active")
+
+        for e in enrollments:
+            item = json.loads(e.to_json())
+            student_list.append(item["user"]["id"])
+
+        return student_list
+
+    @classmethod
+    def process_enrollment_submissions(self, item):
+        """ Process a student submission object
+        :param item: Submission dict
+        :returns submission: dict
+        """
+        print(f"Item: {item.user_id}")
+        print(Assignment.query.get(item.assignment_id))
+        # Get the outcome ID if it matches the assignment ID
+        outcome_id = Outcome.query.get(
+            Assignment.query.get(item.assignment_id).outcome_id
+        ).outcome_id
+
+        submission = {
+            outcome_id: {
+                "assignment_id": item.assignment_id,
+                "assignment_name": item.assignment["name"],
+                "assignment_score": item.score,
+                "outcome_id": outcome_id,
+            }
+        }
+
+        return submission
+
     @staticmethod
     def get_course_assignments(canvas, course_id):
 
@@ -139,7 +153,8 @@ class Assignments:
 
         return assignment_list
 
-    def get_assignment_rubric_results(canvas, course_id, assignment_id):
+    @classmethod
+    def build_assignment_rubric_results(self, canvas, course_id, assignment_id):
 
         course = canvas.get_course(course_id)
 
@@ -154,7 +169,6 @@ class Assignments:
 
         for criteria in rubric:
             if "outcome_id" in criteria:
-                print(criteria)
 
                 column = {}
                 column["id"] = criteria["id"]
@@ -162,11 +176,16 @@ class Assignments:
                 column["outcome_id"] = criteria["outcome_id"]
                 columns.append(column)
 
+        # Create a list to store all results
+        student_results = self.get_assignment_scores(assignment)
+
+        return {"columns": columns, "student_results": student_results}
+
+    @classmethod
+    def get_assignment_scores(self, assignment):
+        student_results = []
         # Get submissions for the assignment to get rubric evals
         submissions = assignment.get_submissions(include=("rubric_assessment", "user"))
-
-        # Create a list to store all results
-        student_results = list()
 
         for submission in list(submissions):
 
@@ -180,7 +199,7 @@ class Assignments:
 
         student_results = sorted(student_results, key=lambda x: x["name"].split(" "))
 
-        return {"columns": columns, "studentResults": student_results}
+        return student_results
 
     def save_assignment_data(canvas, course_id, assignment_group_id):
         """ Save course assignments to the database.
@@ -208,7 +227,6 @@ class Assignments:
                 assignment = Assignment(
                     id=a["id"], title=a["name"], course_id=course_id
                 )
-                data.append({"assignment_id": a["id"], "assignment_name": a["name"]})
 
                 assignment_commits.append(assignment)
 
