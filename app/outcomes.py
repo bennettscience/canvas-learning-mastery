@@ -7,12 +7,30 @@ from app import app, db
 from app.models import Outcome, Assignment
 from app.errors import FailedJob
 
+from sqlalchemy import exc
+
 # from flask_login import current_user
 
 
 class Outcomes:
     def __init__(self):
         pass
+
+    @classmethod
+    def align_assignment_to_outcome(self, course_id, outcome_id, assignment_id):
+
+        try:
+            outcome = Outcome.query.filter_by(
+                outcome_id=outcome_id, course_id=course_id
+            ).first()
+            assignment = Assignment.query.filter_by(
+                id=assignment_id, course_id=course_id
+            ).first()
+
+            outcome.align(assignment)
+            db.session.commit()
+        except KeyError as e:
+            return e
 
     @staticmethod
     def save_outcome_data(canvas, course_id):
