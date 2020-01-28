@@ -11,4 +11,4 @@ poolTest.py
 keysecret.txt
 lti.xml
 tmp/
-tests/settings.py
+/tests/settings.py
