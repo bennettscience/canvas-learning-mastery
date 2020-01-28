@@ -1,5 +1,4 @@
 import time
-from datetime import datetime
 from flask import json, jsonify, redirect, render_template, request, session, url_for
 from requests_oauthlib import OAuth2Session
 from app.models import Outcome, Assignment, User
@@ -8,7 +7,6 @@ from app.assignments import Assignments
 from app.outcomes import Outcomes
 from app.courses import Course
 from app.auth import Auth
-from app.user import CanvasUser
 from flask_login import current_user, login_user, logout_user
 from canvasapi import Canvas, exceptions
 from app import app, db
@@ -118,10 +116,21 @@ def callback():
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     """ Display the logged-in user's courses. """
-    user = CanvasUser()
-    courses = user.get_user_courses()
+    canvas = Auth.init_canvas(session["oauth_token"])
+    user = canvas.get_current_user()
 
-    courses = sorted(courses, key=lambda x: x["term"], reverse=True)
+    all_courses = user.get_courses(
+        state=["available"],
+        enrollment_state=["active"],
+        enrollment_type="teacher",
+        include="total_students",
+    )
+
+    courses = []
+    for c in all_courses:
+        courses.append(Course.process_course(c))
+
+    courses = sorted(courses, key=lambda course: course["term"], reverse=True)
 
     return render_template("dashboard.html", title="Dashboard", courses=courses)
 
@@ -171,6 +180,7 @@ def course(course_id):
         form=form,
     )
 
+
 @app.route("/section", methods=["POST"])
 def section():
     """ Show single section. """
@@ -179,25 +189,20 @@ def section():
     canvas = Auth.init_canvas(session["oauth_token"])
 
     # Look only in the current course
-    assignments = Assignment.query.filter_by(course_id=data["course_id"])
+    assignments = Assignment.query.filter_by(course_id=data["course_id"]).all()
 
     if not assignments:
-        app.logger.info("No assingments found for this course")
         assignments = []
         scores = []
     else:
         try:
-            app.logger.info("Found assignments, getting scores")
             scores = Assignments.get_all_assignment_scores(
                 canvas, data["course_id"], section_id=data["section_id"]
             )
-        except Exception:
+        except Exception as e:
             return (
-                jsonify(
-                    message=f"You've requested an assignment not available to this section. \
-                        Please check your item alignments."
-                ),
-                403,
+                jsonify(message=f"{e}"),
+                500,
             )
 
     # Sort the scores array by student last name before returning
@@ -226,7 +231,7 @@ def get_course_assignments(course_id):
 def get_assignment_rubric(course_id, assignment_id):
     canvas = Auth.init_canvas(session["oauth_token"])
 
-    data = Assignments.get_assignment_rubric_results(canvas, course_id, assignment_id)
+    data = Assignments.build_assignment_rubric_results(canvas, course_id, assignment_id)
 
     return jsonify({"success": data})
 
@@ -253,20 +258,19 @@ def save_outcomes():
 
 
 @app.route("/align", methods=["POST"])
-def align_items():
+def align_assignment_to_outcome():
     """ Align an Assignment to an Outcome
     :methods: POST
     """
     data = request.json
 
-    # Get the Outcome and Assignment specified
-    outcome = Outcome.query.filter_by(outcome_id=data["outcome_id"]).first()
-    assignment = Assignment.query.get(data["assignment_id"])
-
-    # Run the alignment and save
-    outcome.align(assignment)
-    db.session.commit()
-    return jsonify({"success": [data["outcome_id"], data["assignment_id"]]})
+    try:
+        Outcomes.align_assignment_to_outcome(
+            data["course_id"], data["outcome_id"], data["assignment_id"]
+        )
+        return jsonify({"success": [data["outcome_id"], data["assignment_id"]]})
+    except Exception as e:
+        return jsonify({"failure": e})
 
 
 @app.route("/sync", methods=["POST"])
