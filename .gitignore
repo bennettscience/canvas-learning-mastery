@@ -1,4 +1,5 @@
-/__pycache__
+*/__pycache__/
+tests/__pycache__/
 venv
 /logs
 config.py
@@ -11,4 +12,4 @@ poolTest.py
 keysecret.txt
 lti.xml
 tmp/
-/tests/settings.py
+tests/settings.py
