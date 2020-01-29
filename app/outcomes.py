@@ -1,8 +1,7 @@
-import time
 import concurrent.futures
 from functools import partial
 
-from app import app, db
+from app import db
 from app.models import Outcome, Assignment
 from app.errors import FailedJob
 
@@ -106,7 +105,9 @@ class Outcomes:
 
             # Find the matched assignment in the database
             # query = Assignment.query.filter_by(outcome_id=outcome_id).first()
-            query = Outcome.query.filter_by(outcome_id=outcome_id, course_id=course.id).first()
+            query = Outcome.query.filter_by(
+                outcome_id=outcome_id, course_id=course.id
+            ).first()
 
             if query is not None:
                 assignment_id = query.assignment[0].id
@@ -175,20 +176,20 @@ class Outcomes:
 
         :rtype: List result
         """
-        start = time.perf_counter()
+        # start = time.perf_counter()
         course = canvas.get_course(course_id)
 
         job = partial(self.request_score_update, course=course, outcome_ids=outcome_ids)
-        
+
         data = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = executor.map(job, student_ids)
 
             for result in results:
                 data.append(result)
-        
-        finish = time.perf_counter()
-        print(f'Finished in {round(finish-start, 2)} second(s)')
+
+        # finish = time.perf_counter()
+        # print(f"Finished in {round(finish-start, 2)} second(s)")
 
         return data
 

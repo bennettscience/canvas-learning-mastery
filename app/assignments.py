@@ -28,7 +28,6 @@ class Assignments:
         outcome_list = []
         json_data = []
 
-        print(kwargs.get("section_id"))
         # Get the Course object
         course = canvas.get_course(course_id)
 
@@ -117,8 +116,6 @@ class Assignments:
         :param item: Submission dict
         :returns submission: dict
         """
-        print(f"Item: {item.user_id}")
-        print(Assignment.query.get(item.assignment_id))
         # Get the outcome ID if it matches the assignment ID
         outcome_id = Outcome.query.get(
             Assignment.query.get(item.assignment_id).outcome_id
