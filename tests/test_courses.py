@@ -1,12 +1,10 @@
-import datetime
-from canvasapi import Canvas
 import unittest
+
+from canvasapi import Canvas
 from app.courses import Course
 from app.models import Assignment
-from app import db
-
-
-from app import app
+from app import app, db
+from tests import settings
 
 
 def setUpModule():
@@ -27,11 +25,12 @@ def tearDownModule():
 class TestCourses(unittest.TestCase):
 
     def setUp(self):
+
+        self.canvas = Canvas(settings.BASE_URL, settings.API_KEY)
+
         class CourseDict(dict):
             pass
 
-        self.canvas = Canvas('https://elkhart.instructure.com/',
-                        app.config['API']['canvas']['key'])
         self.course = CourseDict()
 
         self.course.id = 1
@@ -44,7 +43,7 @@ class TestCourses(unittest.TestCase):
         self.course.created_at = "2020-05-25T00:00:00Z"
 
     def test_process_course_return(self):
-        processed = Course.process_courses(self.course)
+        processed = Course.process_course(self.course)
         self.assertIsNotNone(processed)
 
     def test_process_course_structure(self):
@@ -55,7 +54,7 @@ class TestCourses(unittest.TestCase):
             "term": 2018
         }
 
-        processed = Course.process_courses(self.course)
+        processed = Course.process_course(self.course)
         self.assertDictEqual(processed, expected)
 
     def test_course_with_no_start_date(self):
@@ -67,5 +66,5 @@ class TestCourses(unittest.TestCase):
         }
 
         self.course.start_at = None
-        processed = Course.process_courses(self.course)
+        processed = Course.process_course(self.course)
         self.assertDictEqual(processed, expected)
