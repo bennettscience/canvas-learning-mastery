@@ -1,4 +1,4 @@
-/__pycache__
+*.pyc
 venv
 /logs
 config.py
@@ -11,5 +11,6 @@ poolTest.py
 keysecret.txt
 lti.xml
 tmp/
-settings.py
-app/*.pyc
+tests/settings.py
+htmlcov/
+.coverage

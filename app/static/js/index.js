@@ -38,7 +38,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
         url: `../course/${courseId}/assignments/${assignmentId}/rubric`,
         success: function(result) {
             result = result.success;
-            console.log(result.columns)
+            // console.log(result.columns)
             const table = document.querySelector('#student-rubric-table');
             table.innerHTML = ''; // Empty the table
 
@@ -68,7 +68,7 @@ const getAssignmentRubrics = function(courseId, assignmentId) {
 
             let container = document.querySelector('#student-rubric-table > tbody');
 
-            result.studentResults.forEach(function(student) {
+            result.student_results.forEach(function(student) {
                 // Set the variable of each row == student[canvas_id]
                 // This makes processing the table easier
                 let rubric = student.rubric;
@@ -175,8 +175,6 @@ const changeSection = function(sectionId) {
                     var name = document.createElement('td');
                     name.innerText = `${student['user_name']}`;
                     tr.appendChild(name);
-                    
-                    console.log(student.submissions)
 
                     // Use the headers to index the submissions cells to
                     // make sure the correct score is in the correct column.
@@ -206,7 +204,7 @@ const changeSection = function(sectionId) {
             }
         }, error: function(request, status, message) {
             let container = document.querySelector(".msg");
-            console.log(request.responseJSON.message);
+            // console.log(request.responseJSON.message);
             let row = document.createElement('tr');
             let msg = document.createElement('td');
 
@@ -236,7 +234,7 @@ const changeHandler = function(e) {
         }),
         contentType: "application/json;charset=UTF-8",
         success: function(resp) {
-            console.log(resp.success)
+            // console.log(resp.success)
             var id = resp.success[0];
         
             $(`#${id} td:last`)
@@ -256,6 +254,13 @@ const changeHandler = function(e) {
             // setTimeout(location.reload(true), 2200);
         },
         failure: function(resp) {
+            var id = resp.failure[0];
+            document.querySelector(`#${id} td:last`)
+                .animate(
+                    {opacity: 1}, 100
+                ).animate(
+                    {opacity: 0}, 2000
+            ).innerText = `U+1F5F4, ${resp[1]}`
             console.error(resp);
         }
     });
@@ -283,7 +288,7 @@ const processTable = function() {
 
     $.ajax({
         type: "POST",
-        url: "/outcomes",
+        url: "/sync",
         data: JSON.stringify({
             student_id_list: arr,
             course_id: courseId,
@@ -291,7 +296,7 @@ const processTable = function() {
         }),
         contentType: "application/json",
         success: function(resp) {
-            console.log(resp);
+            // console.log(resp);
             for (var i = 0; i < resp.success.length; i++) {
                 var student = resp.success[i];
 
@@ -301,7 +306,7 @@ const processTable = function() {
                 $(`#${studentId}`)
                 .children("td")
                 .each(function(i, el) {
-                    console.log(el)
+                    // console.log(el)
                     array.filter(function(item) {
                         if ($(el).attr("data-outcome") == item.outcome_id) {
                             console.log(item)
@@ -344,11 +349,11 @@ document.querySelector("#sectionReload").addEventListener('click', function(e) {
 
 // Toggle the loader animation
 $(document).ajaxStart(function() {
-    console.log("started ajax");
+    // console.log("started ajax");
     $(".loader-wrap").show();
 });
 
 $(document).ajaxStop(function() {
-    console.log("stopped ajax");
+    // console.log("stopped ajax");
     $(".loader-wrap").hide();
 });
