@@ -13,7 +13,8 @@ def setUpModule():
 
     o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
     o2 = Outcome(title='Some outcome 1', course_id=888, outcome_id=123)
-    db.session.add_all([o1, o2])
+    a1 = Assignment(title="Some assignment", course_id=999, id=111)
+    db.session.add_all([o1, o2, a1])
     db.session.commit()
 
 
@@ -25,6 +26,8 @@ def tearDownModule():
 class TestAddOutcomes(unittest.TestCase):
 
     def setUp(self):
+        app.testing = True
+        self.client = app.test_client()
         self.canvas = Canvas(settings.BASE_URL, settings.API_KEY)
 
     def tearDown(self):
@@ -72,12 +75,15 @@ class TestAlignOutcomes(unittest.TestCase):
 
     def test_align_assignment_to_outcome(self):
         o3 = Outcome(outcome_id=1, course_id=999, title="Test Outcome 1")
-        db.session.add(o3)
+        a1 = Assignment(title='Some Assignment', course_id=999, id=1)
+
+        db.session.add_all([o3, a1])
         db.session.commit()
 
         outcome_id = 1
-        assignment_id = 999
-        Outcomes.align_assignment_to_outcome(outcome_id, assignment_id)
+        assignment_id = 1
+        course_id = 999
+        Outcomes.align_assignment_to_outcome(course_id, outcome_id, assignment_id)
 
         outcome = Outcome.query.filter_by(outcome_id=1).first()
         self.assertIsNotNone(outcome.assignment_id)
