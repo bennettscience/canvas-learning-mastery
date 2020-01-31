@@ -165,15 +165,19 @@ class Outcomes:
     @classmethod
     def request_score_update(self, student_id, course, outcome_ids):
         """ Post grade updates to Canvas for a student
-        Args:
-            student_id (int):  Valid Canvas student ID
-            course (<Course>): canvasapi <Course> object
-            outcome_ids (list): Outcome IDs to request from Canvas for processing
+        :param student_id: Valid Canvas student ID
+        :ptype: int
 
-        Raises:
-            FailedJob (<FailedJob>)
+        :param course: canvasapi <Course> object
+        :ptype: <Course>
 
-        :rtype:
+        :param outcome_ids: Outcome IDs to request from Canvas for processing
+        :ptype: list of int
+
+        :raises: Exception <FailedJob>
+
+        :returns update: outcome ID, assignment ID, and updated score
+        :rtype: dict
         """
         try:
             update = self.process_submissions(student_id, course, outcome_ids)
@@ -184,23 +188,23 @@ class Outcomes:
 
     @classmethod
     def update_student_scores(self, canvas, course_id, student_ids, outcome_ids):
-
-        """ Description
-        :type cls: Object
+        """ Worker to process assignment scores for students
         :param cls: Outcomes class
+        :ptype cls: <Outcome> instance
 
-        :type canvas: Object
         :param canvas: Canvas object
+        :ptype canvas: <Canvas> instance
 
-        :type course_id: Int
         :param course_id: Current course ID
+        :ptype course_id: Int
 
-        :type student_ids: List
         :param student_ids: Student IDs to iterate
+        :ptype student_ids: list of int
 
         :raises:
 
-        :rtype: List result
+        :returns data: List of assignment update objects for a student
+        :rtype: list of dicts
         """
         # start = time.perf_counter()
         course = canvas.get_course(course_id)
@@ -214,14 +218,21 @@ class Outcomes:
             for result in results:
                 data.append(result)
 
-        # finish = time.perf_counter()
-        # print(f"Finished in {round(finish-start, 2)} second(s)")
-
         return data
 
     @classmethod
     def get_student_rollups(self, course_id, student_id):
+        """ Request student outcome rollups from Canvas
 
+        :param course_id: Valid Canvas course ID
+        :type course_id: int
+
+        :param student_id: Valid Canvas ID for a student
+        :type student_id: int
+
+        :return: Outcome result rollups from Canvas
+        :rtype: list of dict
+        """
         course = self.canvas.get_course(course_id)
 
         data = course.get_outcome_result_rollups(user_ids=student_id)
