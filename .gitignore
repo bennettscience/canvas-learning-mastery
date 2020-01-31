@@ -1,5 +1,4 @@
-*/__pycache__/
-tests/__pycache__/
+*.pyc
 venv
 /logs
 config.py
@@ -13,3 +12,5 @@ keysecret.txt
 lti.xml
 tmp/
 tests/settings.py
+htmlcov/
+.coverage
