@@ -254,6 +254,13 @@ const changeHandler = function(e) {
             // setTimeout(location.reload(true), 2200);
         },
         failure: function(resp) {
+            var id = resp.failure[0];
+            document.querySelector(`#${id} td:last`)
+                .animate(
+                    {opacity: 1}, 100
+                ).animate(
+                    {opacity: 0}, 2000
+            ).innerText = `U+1F5F4, ${resp[1]}`
             console.error(resp);
         }
     });
