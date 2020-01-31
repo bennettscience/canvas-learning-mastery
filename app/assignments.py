@@ -4,12 +4,19 @@ from app.models import Assignment, Outcome
 
 
 class Assignments:
+
     def __init__(self, canvas, course_id):
+        """ Instantiate an Assignment to work with
+
+        :param canvas: <Canvas> object to work with the API
+        :type canvas: instance of <Canvas>
+
+        :param course_id: Valid Canvas course ID
+        :type course_id: int
+        """
         self.canvas = canvas
         self.course_id = course_id
 
-    # Return an error if the assignment is forbidden
-    # include the assignment name
     @staticmethod
     def get_all_assignment_scores(canvas, course_id, **kwargs):
         """ Request current scores for students in the course
@@ -28,27 +35,21 @@ class Assignments:
         outcome_list = []
         json_data = []
 
-        # Get the Course object
         course = canvas.get_course(course_id)
 
         if "section_id" in kwargs:
             course = course.get_section(kwargs.get("section_id"))
 
-        # Find assignments which are aligned to Outcomes
         query = Assignment.query.filter(
             Assignment.course_id == course_id, Assignment.outcome_id.isnot(None)
         )
 
         if query.all():
-            # Loop Item queries
-            for item in query:
-                # Store the Query objects as dictionaries in a list
-                outcome_list.append(item.__dict__)
 
-                # Store assignment IDs to pass to Canvas
+            for item in query:
+                outcome_list.append(item.__dict__)
                 assignment_list.append(item.id)
 
-            # get active students to request submissions, store IDs in a list
             enrollments = Assignments.build_enrollment_list(course)
 
             # Request the submissions from Canvas sorted by user in a
@@ -72,7 +73,6 @@ class Assignments:
                     # Check that the user is still active in the course
                     if item.user["id"] in enrollments:
 
-                        # Build the dictionary keys
                         canvas_id = canvas_id = item.user["id"]
                         sis_id = item.user["login_id"]
                         user_name = item.user["sortable_name"]
@@ -100,6 +100,14 @@ class Assignments:
 
     @classmethod
     def build_enrollment_list(self, course):
+        """ Request a list of enrollments from the Canvas API for a course
+
+        :param course: <Course> instance
+        :type course: Class
+
+        :return: List of student IDs
+        :rtype: list of int
+        """
         student_list = []
 
         enrollments = course.get_enrollments(role="StudentEnrollment", state="active")
@@ -113,6 +121,7 @@ class Assignments:
     @classmethod
     def process_enrollment_submissions(self, item):
         """ Process a student submission object
+
         :param item: Submission dict
         :returns submission: dict
         """
@@ -134,12 +143,21 @@ class Assignments:
 
     @staticmethod
     def get_course_assignments(canvas, course_id):
+        """ Get all assignments for a Canvas course
 
+        :param canvas: Instance of <Canvas>
+        :type canvas: Class
+
+        :param course_id: Valid Canvas course ID
+        :type course_id: int
+
+        :return: List of assignment IDs
+        :rtype: list of int
+        """
         course = canvas.get_course(course_id)
 
         assignments = list(course.get_assignments())
 
-        # This works without the boolean
         assignment_list = [
             {"id": assignment.id, "name": assignment.name}
             for assignment in assignments
@@ -150,16 +168,26 @@ class Assignments:
 
     @classmethod
     def build_assignment_rubric_results(self, canvas, course_id, assignment_id):
+        """ Look up rubric results for a specific Canvas assignment
 
+        :param canvas: <Canvas> instance
+        :type canvas: Class
+
+        :param course_id: Valid Canvas course ID
+        :type course_id: int
+
+        :param assignment_id: Valid Canvas assignment ID
+        :type assignment_id: int
+
+        :return: Named dictionary of outcomes and rubric results for an assignment
+        :rtype: dict of list of ints
+        """
         course = canvas.get_course(course_id)
-
-        # Get an assignment by ID
         assignment = course.get_assignment(assignment_id)
 
-        # Use the assignment to get a rubric ID for keys/ID
         rubric = assignment.rubric
 
-        # build a list
+        # build a list to use as headers in the view
         columns = []
 
         for criteria in rubric:
@@ -178,8 +206,17 @@ class Assignments:
 
     @classmethod
     def get_assignment_scores(self, assignment):
+        """ Request assignment scores from Canvas
+
+        :param assignment: <Assignment> instance
+        :type assignment: Class
+
+        :return: A list of student dicts with results for the assigment
+        :rtype: list of dict
+        """
         student_results = []
-        # Get submissions for the assignment to get rubric evals
+
+        # Get submissions for the assignment to get rubric evaluation
         submissions = assignment.get_submissions(include=("rubric_assessment", "user"))
 
         for submission in list(submissions):
