@@ -17,7 +17,6 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 app = Flask(__name__)
 app.config.from_object(Config)
 app.config['CORS_HEADERS'] = 'Content-Type'
-# app.logger.addHandler(file_handler)
 db = SQLAlchemy(app)
 login = LoginManager(app)
 login.login_view = 'index'
@@ -25,12 +24,12 @@ migrate = Migrate(app, db)
 bootstrap = Bootstrap(app)
 CORS(app, resources={r"/student*": {"origins": "https://elkhart.instructure.com/*"}})
 
-from app import app, routes, errors
+from app import app, routes
 
 # Connect to Sentry
 # sentry_sdk.init(
 #     dsn=app.config['SENTRY_DSN'],
 #     integrations=[FlaskIntegration()],
 #     send_default_pii=True,
-#     release="canvas-mastery@0.2"
+#     release="canvas-mastery@0.2.0"
 # )

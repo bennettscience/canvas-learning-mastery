@@ -1,8 +1,10 @@
 import unittest
+from canvasapi import Canvas
 
 from app import app, db
 from app.models import Outcome, Assignment
-from sqlalchemy.orm.session import make_transient
+from app.outcomes import Outcomes
+from tests import settings
 
 
 def setUpModule():
@@ -11,9 +13,10 @@ def setUpModule():
 
     o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
     o2 = Outcome(title='Some outcome 1', course_id=888, outcome_id=123)
-
-    db.session.add_all([o1, o2])
+    a1 = Assignment(title="Some assignment", course_id=999, id=111)
+    db.session.add_all([o1, o2, a1])
     db.session.commit()
+
 
 def tearDownModule():
     db.session.remove()
@@ -21,15 +24,14 @@ def tearDownModule():
 
 
 class TestAddOutcomes(unittest.TestCase):
-    # @classmethod
-    # def setUpClass(cls):
-    #     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-    #     db.create_all()
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     db.session.remove()
-    #     db.drop_all()
+    def setUp(self):
+        app.testing = True
+        self.client = app.test_client()
+        self.canvas = Canvas(settings.BASE_URL, settings.API_KEY)
+
+    def tearDown(self):
+        pass
 
     def test_add_single_outcome(self):
         o1 = Outcome(title='Some outcome 1', course_id=999, outcome_id=123)
@@ -54,28 +56,34 @@ class TestAddOutcomes(unittest.TestCase):
         o1 = Outcome.query.filter_by(outcome_id=123).first()
         o1.align(a1)
 
+    def test_add_outcomes_from_canvas(self):
+        Outcomes.save_outcome_data(self.canvas, 39830)
+        outcomes = Outcome.query.filter_by(course_id=39830).all()
+        self.assertEqual(len(outcomes), 2)
 
-class TestFindOutcomes(unittest.TestCase):
-    # def setUp(self):
-    pass
 
+class TestAlignOutcomes(unittest.TestCase):
 
-class TestMigrateOutcomes(unittest.TestCase):
-    def test_migrate_outcomes(self):
-        o1 = Outcome(title='Some outcome 1',
-                     course_id=999, outcome_id=None)
-        o2 = Outcome(title='Some outcome 2',
-                     course_id=888, outcome_id=None)
-        db.session.add_all([o1, o2])
+    def setUp(self):
+        a1 = Assignment(id=999, title="Some Assignment")
+        db.session.add(a1)
         db.session.commit()
 
-        outcomes = Outcome.query.all()
-        for outcome in outcomes:
-            db.session.expunge(outcome)
-            make_transient(outcome)
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
 
-            outcome.outcome_id = outcome.id
-            outcome.id = None
+    def test_align_assignment_to_outcome(self):
+        o3 = Outcome(outcome_id=1, course_id=999, title="Test Outcome 1")
+        a1 = Assignment(title='Some Assignment', course_id=999, id=1)
 
-            db.session.add(outcome)
+        db.session.add_all([o3, a1])
         db.session.commit()
+
+        outcome_id = 1
+        assignment_id = 1
+        course_id = 999
+        Outcomes.align_assignment_to_outcome(course_id, outcome_id, assignment_id)
+
+        outcome = Outcome.query.filter_by(outcome_id=1).first()
+        self.assertIsNotNone(outcome.assignment_id)

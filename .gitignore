@@ -11,3 +11,6 @@ poolTest.py
 keysecret.txt
 lti.xml
 tmp/
+tests/settings.py
+htmlcov/
+.coverage
