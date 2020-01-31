@@ -14,4 +14,3 @@ tmp/
 tests/settings.py
 htmlcov/
 .coverage
-app/__init__.py
