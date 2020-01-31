@@ -59,9 +59,12 @@ class Outcome(db.Model):
                 self.assignment.remove(self.assignment[0])
                 db.session.commit()
         else:
-            self.assignment.append(assignment)
-            db.session.commit()
-            return "Aligned {}".format(assignment.title)
+            try:
+                self.assignment.append(assignment)
+                db.session.commit()
+                return "Aligned {}".format(assignment.title)
+            except Exception as e:
+                return e
 
     # Check that it isn't aleady aligned to the Assignment
     def is_aligned(self):
