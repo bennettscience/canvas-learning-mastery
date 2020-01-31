@@ -31,5 +31,9 @@ from app import app, routes
 #     dsn=app.config['SENTRY_DSN'],
 #     integrations=[FlaskIntegration()],
 #     send_default_pii=True,
+<<<<<<< HEAD
 #     release="canvas-mastery@0.2.0"
+=======
+#     release="canvas-mastery@0.1.9"
+>>>>>>> dev/refactor
 # )
