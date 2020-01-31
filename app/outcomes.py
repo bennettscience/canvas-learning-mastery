@@ -7,11 +7,27 @@ from app.errors import FailedJob
 
 
 class Outcomes:
+    """ Methods for working with Canvas outcomes """
+
     def __init__(self):
         pass
 
     @classmethod
     def align_assignment_to_outcome(self, course_id, outcome_id, assignment_id):
+        """
+        Aligns an assignment ID to an outcome ID
+        :param course_id: Canvas course ID
+        :ptype: int
+
+        :param outcome_id: Canvas Outcome ID
+        :ptype: int
+
+        :param assignment_id: Canvas Assignment ID
+        :ptype: int
+
+        :raises Exception: exception object
+        :rtype: None
+        """
 
         try:
             outcome = Outcome.query.filter_by(
@@ -20,10 +36,15 @@ class Outcomes:
             assignment = Assignment.query.filter_by(
                 id=assignment_id, course_id=course_id
             ).first()
-
-            outcome.align(assignment)
-            db.session.commit()
-        except KeyError as e:
+            if all(v is not None for v in [outcome, assignment]):
+                print(f"Aligning {outcome} to {assignment}")
+                outcome.align(assignment)
+                db.session.commit()
+            else:
+                raise AttributeError(
+                    f"{assignment_id} is not a valid assignment ID for this course."
+                )
+        except Exception as e:
             return e
 
     @staticmethod
@@ -82,12 +103,11 @@ class Outcomes:
         :rtype: {Object} obj
         """
 
-        # Instantiate a dictionary
         obj = {}
         obj["outcomes"] = []
         obj["student_id"] = student_id
 
-        # Request all outcome rollups from Canvas
+        # Request all outcome rollups from Canvas for each student
         rollups = course.get_outcome_result_rollups(
             user_ids=student_id,
             aggregate="course",
@@ -98,13 +118,11 @@ class Outcomes:
         # Limit to scores only
         raw_data = rollups["rollups"][0]["scores"]
 
-        # Run through each Outcome
         for outcome in raw_data:
             outcome_id = int(outcome["links"]["outcome"])
             outcome_score = outcome["score"]
 
             # Find the matched assignment in the database
-            # query = Assignment.query.filter_by(outcome_id=outcome_id).first()
             query = Outcome.query.filter_by(
                 outcome_id=outcome_id, course_id=course.id
             ).first()
@@ -112,11 +130,9 @@ class Outcomes:
             if query is not None:
                 assignment_id = query.assignment[0].id
 
-                # Get the assignment and submissions for the student
                 assignment = course.get_assignment(assignment_id)
                 submission = assignment.get_submission(student_id)
 
-                # Instantiate an object for the current Outcome/Assignment pair
                 item = {
                     "outcome_id": outcome_id,
                     "outcome_score": outcome_score,
@@ -140,7 +156,6 @@ class Outcomes:
                 else:
                     item["assignment_score"] = submission.score
 
-                # Store the item in the return object array
                 obj["outcomes"].append(item)
             else:
                 pass
@@ -149,6 +164,17 @@ class Outcomes:
 
     @classmethod
     def request_score_update(self, student_id, course, outcome_ids):
+        """ Post grade updates to Canvas for a student
+        Args:
+            student_id (int):  Valid Canvas student ID
+            course (<Course>): canvasapi <Course> object
+            outcome_ids (list): Outcome IDs to request from Canvas for processing
+
+        Raises:
+            FailedJob (<FailedJob>)
+
+        :rtype:
+        """
         try:
             update = self.process_submissions(student_id, course, outcome_ids)
             return update

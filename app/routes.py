@@ -1,5 +1,6 @@
 import time
 from flask import json, jsonify, redirect, render_template, request, session, url_for
+from flask_login import login_required
 from requests_oauthlib import OAuth2Session
 from app.models import Outcome, Assignment, User
 from app.forms import StoreOutcomesForm
@@ -16,9 +17,7 @@ from app import app, db
 @app.route("/index", methods=["GET"])
 def index():
     """ App entrance.
-
     If user is logged in, load the dashboard. Otherwise, load the login screen
-
     """
 
     if not current_user.is_anonymous and session["_fresh"]:
@@ -114,6 +113,7 @@ def callback():
 
 
 @app.route("/dashboard", methods=["GET"])
+@login_required
 def dashboard():
     """ Display the logged-in user's courses. """
     canvas = Auth.init_canvas(session["oauth_token"])
@@ -132,10 +132,11 @@ def dashboard():
 
     courses = sorted(courses, key=lambda course: course["term"], reverse=True)
 
-    return render_template("dashboard.html", title="Dashboard", courses=courses)
+    return render_template("dashboard.html", title="Dashboard", courses=courses), 200
 
 
 @app.route("/course/<course_id>", methods=["GET"])
+@login_required
 def course(course_id):
     """ Single course view
     :param course_id: Canvas course ID
@@ -270,7 +271,8 @@ def align_assignment_to_outcome():
         )
         return jsonify({"success": [data["outcome_id"], data["assignment_id"]]})
     except Exception as e:
-        return jsonify({"failure": e})
+        print(f'Received an error {e}')
+        return e, 400
 
 
 @app.route("/sync", methods=["POST"])
