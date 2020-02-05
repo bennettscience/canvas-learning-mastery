@@ -127,7 +127,7 @@ const changeSection = function(sectionId) {
         }),
         contentType: "application/json;charset=UTF-8",
         success: function(scores) {
-
+            // console.log(scores)
             // When the data comes back in enable the reload button
             sectionLoaded = true;
 
@@ -163,7 +163,6 @@ const changeSection = function(sectionId) {
             // Now, build the body of the table
             table.appendChild(document.createElement('tbody'))
 
-            // Grab the body in a var
             let container = document.querySelector("#student-table > tbody")
             let headers = document.querySelectorAll("#student-table > thead > tr > th");
 
@@ -184,9 +183,16 @@ const changeSection = function(sectionId) {
                             let outcome = header.dataset.outcome;
                             var td = document.createElement('td');
                             td.setAttribute('data-outcome', outcome);
-                            var score = submissions.find(item => Object.keys(item) == outcome)
-                            score = (score[outcome]['assignment_score'] === null) ? `-` : score[outcome]['assignment_score'];
+                            var item = submissions.find(item => Object.keys(item) == outcome)
+                            var score = (item[outcome]['assignment_score'] === null) ? `-` : item[outcome]['assignment_score'];
                             td.innerText = score
+                            
+                            // Check the current outcome score against the current gradebook score and highlight appropriately
+                            if(item[outcome]['assignment_score'] === 1 && item[outcome]['current_outcome_score'] < 2.8) {
+                                td.classList.add('drop')
+                            } else if(item[outcome]['assignment_score'] === 0 && item[outcome]['current_outcome_score'] >= 2.8) {
+                                td.classList.add('rise')
+                            }
     
                             tr.appendChild(td);
                         }
@@ -296,7 +302,7 @@ const processTable = function() {
         }),
         contentType: "application/json",
         success: function(resp) {
-            // console.log(resp);
+
             for (var i = 0; i < resp.success.length; i++) {
                 var student = resp.success[i];
 
@@ -309,8 +315,8 @@ const processTable = function() {
                     // console.log(el)
                     array.filter(function(item) {
                         if ($(el).attr("data-outcome") == item.outcome_id) {
-                            console.log(item)
-                            $(el).html(item.assignment_score);
+                            $(el).text(item.assignment_score);
+                            $(el).removeClass()
                         }
                     });
                 }); 

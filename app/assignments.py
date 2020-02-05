@@ -4,7 +4,6 @@ from app.models import Assignment, Outcome
 
 
 class Assignments:
-
     def __init__(self, canvas, course_id):
         """ Instantiate an Assignment to work with
 
@@ -78,7 +77,9 @@ class Assignments:
                         user_name = item.user["sortable_name"]
 
                         submissions.append(
-                            Assignments.process_enrollment_submissions(item)
+                            Assignments.process_enrollment_submissions(
+                                canvas, course_id, canvas_id, item
+                            )
                         )
 
                     else:
@@ -119,7 +120,7 @@ class Assignments:
         return student_list
 
     @classmethod
-    def process_enrollment_submissions(self, item):
+    def process_enrollment_submissions(self, canvas, course_id, student_id, item):
         """ Process a student submission object
 
         :param item: Submission dict
@@ -130,12 +131,19 @@ class Assignments:
             Assignment.query.get(item.assignment_id).outcome_id
         ).outcome_id
 
+        outcome_rollup = canvas.get_course(course_id).get_outcome_result_rollups(
+            user_ids=student_id, outcome_ids=outcome_id
+        )
+
+        score = outcome_rollup["rollups"][0]["scores"][0]["score"]
+
         submission = {
             outcome_id: {
                 "assignment_id": item.assignment_id,
                 "assignment_name": item.assignment["name"],
                 "assignment_score": item.score,
                 "outcome_id": outcome_id,
+                "current_outcome_score": score,
             }
         }
 
