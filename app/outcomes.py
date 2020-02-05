@@ -156,7 +156,8 @@ class Outcomes:
                 obj["outcomes"].append(item)
             else:
                 pass
-
+        
+        db.session.close()
         return obj
 
     @classmethod
@@ -181,7 +182,7 @@ class Outcomes:
             return update
 
         except Exception as ex:
-            raise FailedJob(student_id) from ex
+            raise FailedJob(ex)
 
     @classmethod
     def update_student_scores(self, canvas, course_id, student_ids, outcome_ids):
