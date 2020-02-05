@@ -247,7 +247,15 @@ td > select {
   width: 100%;
 }
 
-tr:not(:first-child):hover {
+.drop {
+  background-color: rgba(255,0,0,0.25)
+}
+
+.rise {
+  background-color: rgba(0, 255, 0, 0.25)
+}
+
+tr:hover {
   background-color: rgba(200, 200, 200, 0.25);
   cursor: pointer;
 }
