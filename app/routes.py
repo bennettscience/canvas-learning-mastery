@@ -13,8 +13,8 @@ from canvasapi import Canvas, exceptions
 from app import app, db
 
 
-@app.route("/", methods=["GET"])
-@app.route("/index", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
+@app.route("/index", methods=["GET", "POST"])
 def index():
     """ App entrance.
     If user is logged in, load the dashboard. Otherwise, load the login screen
@@ -44,7 +44,7 @@ def index():
         return render_template("login.html", title="Canvas Mastery Doctor")
 
 
-@app.route("/login", methods=["GET"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     """ Log in to the app via OAuth through Canvas
     :methods: GET
