@@ -108,19 +108,16 @@ class Outcomes:
         obj["student_id"] = student_id
 
         # Request all outcome rollups from Canvas for each student
-        rollups = course.get_outcome_result_rollups(
+        request = course.get_outcome_result_rollups(
             user_ids=student_id,
-            aggregate="course",
-            aggregate_stat="mean",
             outcome_ids=outcome_ids,
         )
 
         # Limit to scores only
-        raw_data = rollups["rollups"][0]["scores"]
+        scores = request["rollups"][0]["scores"]
 
-        for outcome in raw_data:
+        for outcome in scores:
             outcome_id = int(outcome["links"]["outcome"])
-            outcome_score = outcome["score"]
 
             # Find the matched assignment in the database
             query = Outcome.query.filter_by(
@@ -135,7 +132,7 @@ class Outcomes:
 
                 item = {
                     "outcome_id": outcome_id,
-                    "outcome_score": outcome_score,
+                    "outcome_score": outcome['score'],
                     "assignment_id": assignment_id,
                 }
 
