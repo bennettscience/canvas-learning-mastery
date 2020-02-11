@@ -135,7 +135,10 @@ class Assignments:
             user_ids=student_id, outcome_ids=outcome_id
         )
 
-        score = outcome_rollup["rollups"][0]["scores"][0]["score"]
+        if len(outcome_rollup["rollups"][0]["scores"]) > 0:
+            score = outcome_rollup["rollups"][0]["scores"][0]["score"]
+        else:
+            score = None
 
         submission = {
             outcome_id: {
