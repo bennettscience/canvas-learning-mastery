@@ -28,22 +28,30 @@ class Outcomes:
         :raises Exception: exception object
         :rtype: None
         """
+        assignment_id = None if assignment_id == 'None' else assignment_id
+
+        outcome = Outcome.query.filter_by(
+            outcome_id=outcome_id, course_id=course_id
+        ).first()
 
         try:
-            outcome = Outcome.query.filter_by(
-                outcome_id=outcome_id, course_id=course_id
-            ).first()
-            assignment = Assignment.query.filter_by(
-                id=assignment_id, course_id=course_id
-            ).first()
-            if all(v is not None for v in [outcome, assignment]):
-                print(f"Aligning {outcome} to {assignment}")
-                outcome.align(assignment)
-                db.session.commit()
+            if assignment_id is not None:
+
+                assignment = Assignment.query.filter_by(
+                    id=assignment_id, course_id=course_id
+                ).first()
+
+                if all(v is not None for v in [outcome, assignment]):
+                    outcome.align(assignment)
+                    db.session.commit()
+                else:
+                    raise AttributeError(
+                        f"{assignment_id} is not a valid assignment ID for this course."
+                    )
             else:
-                raise AttributeError(
-                    f"{assignment_id} is not a valid assignment ID for this course."
-                )
+                outcome.align(None)
+                db.session.commit()
+
         except Exception as e:
             return e
 
@@ -156,7 +164,7 @@ class Outcomes:
                 obj["outcomes"].append(item)
             else:
                 pass
-        
+
         db.session.close()
         return obj
 

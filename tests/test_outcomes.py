@@ -65,8 +65,11 @@ class TestAddOutcomes(unittest.TestCase):
 class TestAlignOutcomes(unittest.TestCase):
 
     def setUp(self):
-        a1 = Assignment(id=999, title="Some Assignment")
-        db.session.add(a1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db.create_all()
+        o2 = Outcome(outcome_id=123, course_id=999, title="Some Outcome")
+        a2 = Assignment(id=999, course_id=999, title="Some Assignment")
+        db.session.add_all([o2, a2])
         db.session.commit()
 
     def tearDown(self):
@@ -87,3 +90,15 @@ class TestAlignOutcomes(unittest.TestCase):
 
         outcome = Outcome.query.filter_by(outcome_id=1).first()
         self.assertIsNotNone(outcome.assignment_id)
+
+    def test_unalign_outcome(self):
+        o = Outcome.query.filter_by(outcome_id=123).first()
+        a = Assignment.query.filter_by(id=999).first()
+
+        o.align(a)
+        db.session.commit()
+
+        o.align(None)
+        db.session.commit()
+
+        self.assertIsNone(o.assignment_id)
