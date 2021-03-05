@@ -6,11 +6,7 @@
 {% for message in get_flashed_messages() %}
     <p><b>Error</b>: {{ message }}</p>
 {% endfor %}
-{% if current_user.is_authenticated %}
-<h2>Hi {{current_user.name }}</h2>
-{% else %}
 <p><a href="{{ url_for('login') }}">Login with Canvas</a></p>
     </div>
 </div>
-{% endif %}
 {% endblock %}

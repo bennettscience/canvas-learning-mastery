@@ -1,4 +1,4 @@
-from app import db, login
+from app import db
 from flask_login import UserMixin
 
 
@@ -23,11 +23,6 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return "User: {} | {} ".format(self.name, self.canvas_id)
-
-
-@login.user_loader
-def load_user(id):
-    return User.query.get(id)
 
 
 class Outcome(db.Model):

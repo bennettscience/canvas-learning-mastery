@@ -6,22 +6,13 @@ import time
 
 
 class Auth:
-    """ Manage OAuth flow. """
-        
-    oauth = OAuth2Session(
-        app.config["OAUTH_CREDENTIALS"]["canvas"]["id"],
-        redirect_uri=app.config["OAUTH_CREDENTIALS"]["canvas"]["redirect_url"],
-    )
+    """ 
+    Class to manage the OAuth2 flow for Canvas. 
+    Initialize for the user and pass all calls through
+    the authorized object.
+    """
 
-    auth_url = oauth.authorization_url(
-        app.config["OAUTH_CREDENTIALS"]["canvas"]["authorization_url"]
-    )
-
-    def __init__(self):
-        pass
-
-    @classmethod
-    def init_canvas(self, token):
+    def init_canvas(self):
         """ Launch a new Canvas object
         :type token: Str
         :param token: OAuth token
@@ -29,7 +20,7 @@ class Auth:
         :returns canvas: Canvas instance
         :rtype: Object
         """
-        expire = token["expires_at"]
+        expire = self.token["expires_at"]
 
         if time.time() > expire:
             # get a new access token and store it
@@ -45,17 +36,14 @@ class Auth:
             oauth_refresh = OAuth2Session(client_id, token=token)
             session["oauth_token"] = oauth_refresh.refresh_token(refresh_url, **extra)
 
-        canvas = Canvas(
-            "https://elkhart.instructure.com", session["oauth_token"]["access_token"]
+        return Canvas(
+            app.config["OAUTH_CREDENTIALS"]["canvas"]["base_url"], session["oauth_token"]["access_token"]
         )
-        return canvas
 
-    @classmethod
     def login(self):
         """Log the user in."""
         return self.auth_url
 
-    @classmethod
     def get_token(self):
         """ Retrieve an access token from Canvas. """
         token = self.oauth.fetch_token(
@@ -66,4 +54,6 @@ class Auth:
             replace_tokens=True,
         )
 
+        #  Refactor later into standalone class to manage authorization
+        # self.token = token
         return token

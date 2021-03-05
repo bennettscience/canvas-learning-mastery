@@ -12,6 +12,19 @@ from flask_login import current_user, login_user, logout_user
 from canvasapi import Canvas, exceptions
 from app import app, db
 
+# init a new global auth for this user.
+# auth = Auth()
+# canvas = auth.init_canvas()
+
+oauth = OAuth2Session(
+    app.config["OAUTH_CREDENTIALS"]["canvas"]["id"],
+    redirect_uri=app.config["OAUTH_CREDENTIALS"]["canvas"]["redirect_url"],
+)
+
+auth_url = oauth.authorization_url(
+    app.config["OAUTH_CREDENTIALS"]["canvas"]["authorization_url"]
+)
+
 
 @app.route("/", methods=["GET", "POST"])
 @app.route("/index", methods=["GET", "POST"])
@@ -20,7 +33,7 @@ def index():
     If user is logged in, load the dashboard. Otherwise, load the login screen
     """
 
-    if not current_user.is_anonymous and session["_fresh"]:
+    if session:
         expire = session["oauth_token"]["expires_at"]
 
         if time.time() > expire:
@@ -40,8 +53,8 @@ def index():
         return redirect(url_for("dashboard"))
     else:
         session.clear()
-        logout_user()
-        return render_template("login.html", title="Canvas Mastery Doctor")
+
+        return render_template("login.html", title="Canvas SBG Helper")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -54,9 +67,16 @@ def login():
         400:
             description: Bad request.
     """
-    authorization_url, state = Auth.login()
+    # authorization_url and state are destructured oauthlib
+    # auth_url is the full address with params
+    # state is the internal state for making API calls.
+    authorization_url, state = Auth().login()
+
+    # Is it necessary for Flask session to store this?
+    # TODO: Refactor to rely on the oauth state object.
     session["oauth_state"] = state
 
+    # send the clinet to the authorization URL to sign in.
     return redirect(authorization_url)
 
 
@@ -64,7 +84,6 @@ def login():
 def logout():
     """ Log the current user out."""
     session.clear()
-    logout_user()
 
     return redirect(url_for("index"))
 
@@ -80,8 +99,10 @@ def callback():
             description: Bad request
     """
 
-    token = Auth.get_token()
+    token = auth.get_token()
+    # auth.set_token(token)
 
+    # store the token in the session to use later.
     session["oauth_token"] = token
 
     user_id = str(session["oauth_token"]["user"]["id"])
@@ -107,8 +128,6 @@ def callback():
         db.session.add(user)
         db.session.commit()
 
-    login_user(user, True)
-
     return redirect(url_for("dashboard"))
 
 
@@ -116,7 +135,7 @@ def callback():
 @login_required
 def dashboard():
     """ Display the logged-in user's courses. """
-    canvas = Auth.init_canvas(session["oauth_token"])
+    canvas = Auth().init_canvas()
     user = canvas.get_current_user()
 
     all_courses = user.get_courses(
@@ -147,7 +166,7 @@ def course(course_id):
     :rtype:
     """
     # Instantiate a new Canvas object
-    canvas = Auth.init_canvas(session["oauth_token"])
+    canvas = Auth().init_canvas()
 
     # Get the assignment groups from Canvas
     course = canvas.get_course(course_id)
@@ -187,7 +206,7 @@ def section():
     """ Show single section. """
     data = request.json
 
-    canvas = Auth.init_canvas(session["oauth_token"])
+    canvas = Auth().init_canvas()
 
     # Look only in the current course
     assignments = Assignment.query.filter_by(course_id=data["course_id"]).all()
@@ -221,7 +240,7 @@ def section():
 @app.route("/course/<course_id>/assignments", methods=["GET"])
 def get_course_assignments(course_id):
 
-    canvas = Auth.init_canvas(session["oauth_token"])
+    canvas = Auth().init_canvas()
 
     data = Assignments.get_course_assignments(canvas, course_id)
 
