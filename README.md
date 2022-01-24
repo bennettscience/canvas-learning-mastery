@@ -2,7 +2,10 @@
 
 This Flask application hooks into Canvas to associate Outcome scores with actual assignments.
 
-This is very much a work in progress.
+This project is no longer being updated. I was just learning how to develop complex applications when I made
+this version, but it quickly became unsustainable. Instead of trying to untangle everything here, I've started
+a new, more robust, more sustainable version of the helper [over here](https://github.com/bennettscience/canvas-lms-mastery-helper).
+
 
 ## What does it do?
 
